@@ -8,6 +8,14 @@ from models import PesquisaMercado
 import unicodedata
 import re
 
+# ===== CACHE GLOBAL PARA PERFORMANCE =====
+# Os DataFrames são carregados uma única vez e reutilizados
+_cache = {
+    'contas': None,
+    'produtos': None,
+    'filiais': None
+}
+
 def exportar_para_excel(cotacoes, filename=None):
     """
     Exporta cotações ou pesquisas para um arquivo Excel
@@ -178,11 +186,18 @@ def carregar_filiais_mesoregioes(path_excel=None):
 
 def carregar_contas_cache():
     """
-    Carrega o cache de cooperados do arquivo Excel
+    Carrega o cache de cooperados do arquivo Excel.
+    Usa cache global para evitar recarregar o arquivo a cada busca.
     Returns:
         df (pandas.DataFrame): DataFrame com os dados
         error (str): Mensagem de erro se houver
     """
+    global _cache
+    
+    # Retornar do cache se já estiver carregado
+    if _cache['contas'] is not None:
+        return _cache['contas'], None
+    
     try:
         # Calcular o caminho relativo à pasta do projeto
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -203,17 +218,27 @@ def carregar_contas_cache():
         df['Matricula'] = df['Matricula'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
         df['Nome da conta'] = df['Nome da conta'].astype(str).str.strip()
         
+        # Salvar no cache
+        _cache['contas'] = df
+        
         return df, None
     except Exception as e:
         return None, str(e)
 
 def carregar_produtos_cache():
     """
-    Carrega o cache de produtos do arquivo Excel
+    Carrega o cache de produtos do arquivo Excel.
+    Usa cache global para evitar recarregar o arquivo a cada busca.
     Returns:
         df (pandas.DataFrame): DataFrame com os dados
         error (str): Mensagem de erro se houver
     """
+    global _cache
+    
+    # Retornar do cache se já estiver carregado
+    if _cache['produtos'] is not None:
+        return _cache['produtos'], None
+    
     try:
         # Calcular o caminho relativo à pasta do projeto
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -233,6 +258,9 @@ def carregar_produtos_cache():
         # Converter código para string e limpar
         df['Código do produto'] = df['Código do produto'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
         df['Nome do produto'] = df['Nome do produto'].astype(str).str.strip()
+        
+        # Salvar no cache
+        _cache['produtos'] = df
         
         return df, None
     except Exception as e:

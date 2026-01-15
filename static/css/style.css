@@ -1834,3 +1834,71 @@ footer p {
     background: rgba(46, 125, 50, 0.3);
     color: var(--text-primary);
 }
+
+/* ===== FIX DROPDOWN OVERFLOW ===== */
+/* Garante que o dropdown menu apareça por cima do container */
+.content-card,
+.content-table,
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* Permitir scroll horizontal apenas quando necessário */
+.table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+/* Dropdown menu posicionado corretamente */
+.dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+    min-width: 150px;
+    padding: 0.5rem 0;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+}
+
+/* Dropdown abre para a esquerda para evitar sair da tela */
+.dropdown-menu-end {
+    right: 0;
+    left: auto;
+}
+
+/* Estilo dos itens do dropdown */
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    color: var(--text-primary);
+    transition: var(--transition-fast);
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--primary);
+}
+
+.dropdown-item i {
+    margin-right: 0.5rem;
+    width: 16px;
+}
+
+/* Dark mode dropdown */
+[data-theme="dark"] .dropdown-menu {
+    background-color: #2D2D2D;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: #E0E0E0;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background-color: #3D3D3D;
+    color: var(--primary-light);
+}
+
+[data-theme="dark"] .dropdown-divider {
+    border-color: #404040;
+}
