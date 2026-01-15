@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Cotações e Pesquisas de Insumos Agrícolas">
+    <meta name="theme-color" content="#2E7D32">
+    <title>{% block title %}Cotações de Insumos e Pesquisas de Mercado{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌾%3C/text%3E%3C/svg%3E">
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+
+    <!-- Script de Tema (carrega antes para evitar flash) -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Cabeçalho com Glassmorphism -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Cotações de Insumos e Pesquisas de Mercado</h1>
+                        <p>Cadastro e monitoramento das pesquisas e cotações de insumos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <!-- Botão de Alternar Tema -->
+                <button type="button" class="theme-toggle" title="Alternar tema">
+                    <i class="fas fa-sun icon-sun"></i>
+                    <i class="fas fa-moon icon-moon"></i>
+                    <span class="theme-label">Escuro</span>
+                </button>
+
+                <!-- Navegação -->
+                <a href="{{ url_for('routes.index') }}" class="nav-link active">
+                    <i class="fas fa-home"></i>
+                    <span>Início</span>
+                </a>
+                <a href="{{ url_for('cotacao_routes.nova_cotacao') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    <span>Nova Cotação</span>
+                </a>
+                <a href="{{ url_for('pesquisa_routes.nova_pesquisa') }}" class="btn btn-primary">
+                    <i class="fas fa-search-plus"></i>
+                    <span>Nova Pesquisa</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container-fluid text-center">
+            <p class="text-muted mb-2 small">
+                <i class="fas fa-seedling" style="color: var(--primary); margin-right: 0.5rem;"></i>
+                © 2026 Cotações de Insumos e Pesquisas de Mercado
+            </p>
+            <hr class="footer-divider">
+            <p class="text-muted mb-0 small mt-2">
+                Desenvolvido pela Inteligência de Mercado
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

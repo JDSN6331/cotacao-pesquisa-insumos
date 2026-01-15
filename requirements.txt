@@ -1,0 +1,23 @@
+# Core Flask
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+
+# Database
+psycopg2-binary==2.9.9
+
+# Data Processing
+openpyxl==3.1.2
+pandas==2.1.4
+
+# Environment
+python-dotenv==1.0.0
+
+# Production Server
+gunicorn==21.2.0
+
+# Timezone (fallback for older Python)
+pytz==2024.1
+
+# Build (optional - for creating executables)
+# pyinstaller==6.3.0

@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""
+Script para gerenciar o banco de dados da aplicação de Cotações de Fertilizantes.
+"""
+
+import os
+import sys
+from flask import Flask
+from flask_migrate import upgrade, downgrade, current, history, migrate
+from app import app, db
+from models import Cotacao, ProdutoCotacao, PesquisaMercado
+
+def show_help():
+    """Mostra a ajuda do script."""
+    print("""
+Script de Gerenciamento do Banco de Dados
+
+Uso: python manage_db.py [comando]
+
+Comandos disponíveis:
+    init        - Inicializa o banco de dados (cria tabelas)
+    migrate     - Cria uma nova migração
+    upgrade     - Aplica migrações pendentes
+    downgrade   - Reverte a última migração
+    status      - Mostra o status atual das migrações
+    history     - Mostra o histórico de migrações
+    backup      - Faz backup do banco atual
+    restore     - Restaura backup (use com cuidado!)
+    help        - Mostra esta ajuda
+
+Exemplos:
+    python manage_db.py init
+    python manage_db.py migrate -m "Adiciona novo campo"
+    python manage_db.py upgrade
+    python manage_db.py status
+""")
+
+def init_db():
+    """Inicializa o banco de dados."""
+    with app.app_context():
+        print("Criando tabelas...")
+        db.create_all()
+        print("Banco de dados inicializado com sucesso!")
+
+def backup_db():
+    """Faz backup do banco de dados."""
+    import shutil
+    from datetime import datetime
+    
+    db_path = 'instance/cotacoes.db'
+    if not os.path.exists(db_path):
+        print("Erro: Banco de dados não encontrado!")
+        return
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_path = f'backup_cotacoes_{timestamp}.db'
+    
+    shutil.copy2(db_path, backup_path)
+    print(f"Backup criado: {backup_path}")
+
+def restore_db():
+    """Restaura backup do banco de dados."""
+    import glob
+    
+    backups = glob.glob('backup_cotacoes_*.db')
+    if not backups:
+        print("Nenhum backup encontrado!")
+        return
+    
+    # Mostrar backups disponíveis
+    print("Backups disponíveis:")
+    for i, backup in enumerate(backups, 1):
+        print(f"{i}. {backup}")
+    
+    try:
+        choice = int(input("Escolha o backup para restaurar (número): ")) - 1
+        if 0 <= choice < len(backups):
+            import shutil
+            shutil.copy2(backups[choice], 'instance/cotacoes.db')
+            print(f"Backup restaurado: {backups[choice]}")
+        else:
+            print("Escolha inválida!")
+    except (ValueError, KeyboardInterrupt):
+        print("Operação cancelada.")
+
+def main():
+    """Função principal."""
+    if len(sys.argv) < 2:
+        show_help()
+        return
+    
+    command = sys.argv[1].lower()
+    
+    if command == 'help':
+        show_help()
+    elif command == 'init':
+        init_db()
+    elif command == 'backup':
+        backup_db()
+    elif command == 'restore':
+        restore_db()
+    elif command in ['migrate', 'upgrade', 'downgrade', 'status', 'history']:
+        with app.app_context():
+            if command == 'migrate':
+                message = sys.argv[2] if len(sys.argv) > 2 else "Migração automática"
+                migrate(message=message)
+            elif command == 'upgrade':
+                upgrade()
+            elif command == 'downgrade':
+                downgrade()
+            elif command == 'status':
+                current()
+            elif command == 'history':
+                history()
+    else:
+        print(f"Comando desconhecido: {command}")
+        show_help()
+
+if __name__ == '__main__':
+    main() 

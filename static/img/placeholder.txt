@@ -1,0 +1,1 @@
+Este arquivo é apenas um placeholder para garantir que a pasta img seja criada.

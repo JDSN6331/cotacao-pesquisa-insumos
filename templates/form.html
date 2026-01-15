@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if cotacao else 'Nova' }} Cotação | Cotações Específicas de Fertilizantes{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilo personalizado para o botão de escolher arquivo */
+    input[type="file"]::file-selector-button {
+        background-color: #198754;
+        color: white;
+        border: none;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+        background-color: #157347;
+    }
+
+    .form-select.border-success:focus,
+    .form-select.border-success {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25) !important;
+    }
+
+    /*
+    Estilos movidos para style.css para consistência global:
+    .step, .produto-item, .btn-navigation, .btn-add-produto, .btn-remove-produto
+    */
+    .step {
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .produto-item {
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .btn-navigation {
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .btn-add-produto {
+        color: white;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .btn-remove-produto {
+        color: white;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+    /* Estilos para campos bloqueados por fase */
+    /* Estilos para campos bloqueados por fase */
+    .campo-bloqueado {
+        cursor: not-allowed !important;
+        opacity: 0.7;
+    }
+
+    .campo-bloqueado:focus {
+        box-shadow: none !important;
+    }
+
+    /* Indicador visual de campo bloqueado */
+    .campo-bloqueado+label::after {
+        content: " (Bloqueado)";
+        color: #dc3545;
+        font-size: 0.8em;
+        font-style: italic;
+    }
+
+    /* Estilos para campos válidos (sucesso) - Melhoria 14 */
+    .is-valid {
+        border-color: #198754 !important;
+        padding-right: calc(1.5em + 0.75rem) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right calc(0.375em + 0.1875rem) center !important;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+    }
+
+    .is-valid:focus {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">{{ 'Editar' if cotacao else 'Criação - Nova' }} Cotação</h2>
+        </div>
+        <div class="card-body">
+            {# Exibir status atual com estilização de badge #}
+            <div class="mb-3">
+                <p class="mb-0">
+                    {% if cotacao %}
+                    <strong>Status atual:</strong>
+                    {% set status = cotacao.status %}
+                    {% if status == 'Análise Comercial' %}
+                    <span class="badge status-analise-comercial">{{ status }}</span>
+                    {% elif status == 'Análise Suprimentos' %}
+                    <span class="badge status-analise-suprimentos">{{ status }}</span>
+                    {% elif status == 'Liberado para Venda' %}
+                    <span class="badge status-liberado">{{ status }}</span>
+                    {% elif status == 'Cotação Perdida' %}
+                    <span class="badge status-perdida">{{ status }}</span>
+                    {% else %}
+                    <span class="badge status-criacao">{{ status }}</span>
+                    {% endif %}
+                    {% else %}
+                    <strong>Fase atual:</strong>
+                    <span class="badge status-criacao">Criação</span>
+                    <br>
+                    <small class="text-muted">Status será definido após finalizar a criação</small>
+                    {% endif %}
+                </p>
+            </div>
+
+            <form id="cotacaoForm" method="POST"
+                action="{{ url_for('cotacao_routes.criar_cotacao') if not cotacao else url_for('cotacao_routes.atualizar_cotacao', id=cotacao.id) }}"
+                enctype="multipart/form-data">
+                <input type="hidden" name="id" value="{{ cotacao.id if cotacao }}">
+                <input type="hidden" id="statusAtual" value="{{ cotacao.status if cotacao else 'Criação' }}">
+                <!-- Passo 1: Criação - Informações da Filial e Cooperado -->
+                <div class="step" id="step1">
+                    <h3 class="mb-4">Criação - Informações da Filial e Cooperado</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="nome_filial" class="form-label">Filial <span class="text-danger"
+                                        id="filial_required">*</span></label>
+                                <select class="form-select" id="nome_filial" name="nome_filial" required
+                                    data-initial-value="{{ cotacao.nome_filial if cotacao }}">
+                                    <option value="">Selecione</option>
+                                </select>
+                                <small class="form-text text-muted" id="filial_help" style="display: none;">Não é
+                                    necessário selecionar filial para culturas de cereais</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="mesoregiao" class="form-label">Mesoregião Geográfica <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="mesoregiao" name="mesoregiao"
+                                    value="{{ cotacao.numero_mesorregiao if cotacao }}" readonly required
+                                    data-initial-value="{{ cotacao.numero_mesorregiao if cotacao }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="matricula_cooperado" class="form-label">Matrícula do Cooperado <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="matricula_cooperado"
+                                    name="matricula_cooperado" value="{{ cotacao.matricula_cooperado if cotacao }}"
+                                    required>
+                                <div id="loading_matricula" class="mt-2" style="display: none;">
+                                    <small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Buscando
+                                        cooperado...</small>
+                                </div>
+                                <!-- Container para mensagens de erro -->
+                                <div class="invalid-feedback" id="matricula_cooperado_error" style="display: none;">
+                                    Por favor, preencha a matrícula do cooperado corretamente
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="nome_cooperado" class="form-label">Nome do Cooperado <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nome_cooperado" name="nome_cooperado"
+                                    value="{{ cotacao.nome_cooperado if cotacao }}" required>
+                                <div id="loading_nome" class="mt-2" style="display: none;">
+                                    <small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Buscando
+                                        cooperado...</small>
+                                </div>
+                                <div id="sugestoes_nome" class="mt-2" style="display: none;">
+                                    <div class="list-group">
+                                        <!-- Sugestões serão inseridas aqui -->
+                                    </div>
+                                </div>
+                                <!-- Container para mensagens de erro -->
+                                <div class="invalid-feedback" id="nome_cooperado_error" style="display: none;">
+                                    Por favor, preencha o nome do cooperado corretamente
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="cultura" class="form-label">Cultura <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="cultura" name="cultura" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Café" {{ 'selected' if cotacao and cotacao.cultura=='Café' }}>Café
+                                    </option>
+                                    <option value="Soja" {{ 'selected' if cotacao and cotacao.cultura=='Soja' }}>Soja
+                                    </option>
+                                    <option value="Milho" {{ 'selected' if cotacao and cotacao.cultura=='Milho' }}>Milho
+                                    </option>
+                                    <option value="Hortifruti" {{ 'selected' if cotacao and
+                                        cotacao.cultura=='Hortifruti' }}>Hortifruti</option>
+                                    <option value="Pastagem" {{ 'selected' if cotacao and cotacao.cultura=='Pastagem'
+                                        }}>Pastagem</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="nome_vendedor" class="form-label">Vendedor <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nome_vendedor" name="nome_vendedor"
+                                    value="{{ cotacao.nome_vendedor if cotacao }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="analista_comercial" class="form-label">Analista Comercial <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="analista_comercial"
+                                    name="analista_comercial" value="{{ cotacao.analista_comercial if cotacao }}"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="comprador" class="form-label">Comprador</label>
+                                <input type="text" class="form-control campo-bloqueado" id="comprador" name="comprador"
+                                    value="{{ cotacao.comprador if cotacao }}" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Passo 2: Criação - Informações dos Produtos -->
+                <div class="step" id="step2">
+                    <h3 class="mb-4">Criação - Informações dos Produtos</h3>
+                    <div id="produtosContainer"></div>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary btn-add-produto" id="addProdutoButton">
+                            <i class="fas fa-plus me-2"></i>Adicionar Produto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Passo 3: Criação - Informações de Pagamento e Entrega (Cooperado) -->
+                <div class="step" id="step3">
+                    <h3 class="mb-4">Criação - Informações de Pagamento e Entrega (Cooperado)</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="forma_pagamento" class="form-label">Forma de Pagamento <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="forma_pagamento" name="forma_pagamento"
+                                    value="{{ cotacao.forma_pagamento if cotacao }}" required
+                                    placeholder="Ex: À Vista, 30 dias, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="prazo_entrega" class="form-label">Prazo de Entrega <span
+                                        class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="prazo_entrega" name="prazo_entrega"
+                                    value="{{ cotacao.prazo_entrega.strftime('%Y-%m-%d') if cotacao and cotacao.prazo_entrega else '' }}"
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <label for="observacoes" class="form-label">Observações</label>
+                                <textarea class="form-control" id="observacoes" name="observacoes"
+                                    rows="3">{{ cotacao.observacoes if cotacao }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <label for="anexos" class="form-label">Anexar Arquivos (Máx. 5)</label>
+                                <input type="file" class="form-control" id="anexo" name="anexos[]" multiple
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png">
+                                <div class="form-text">Formatos permitidos: PDF, Word, Excel e Imagens. Limite de 5
+                                    arquivos
+                                    no total.</div>
+                                <div class="invalid-feedback" id="anexoError"></div>
+
+                                <!-- Lista de Anexos Existentes -->
+                                {% if cotacao and cotacao.anexos %}
+                                <div class="mt-2">
+                                    <label class="form-label text-muted small">Arquivos Anexados:</label>
+                                    <ul class="list-group list-group-flush" id="lista-anexos-existentes">
+                                        {% for anexo in cotacao.anexos %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center p-2"
+                                            id="anexo-{{ anexo.id }}">
+                                            <a href="{{ url_for('routes.download_file', filename=anexo.filename) }}"
+                                                target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-paperclip me-2"></i>{{ anexo.filename }}
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-anexo"
+                                                data-id="{{ anexo.id }}" onclick="removerAnexo({{ anexo.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <script>
+                            function removerAnexo(id) {
+                                if (confirm('Tem certeza que deseja remover este anexo?')) {
+                                    fetch(`/api/anexos/${id}`, {
+                                        method: 'DELETE',
+                                    })
+                                        .then(response => {
+                                            if (response.ok) {
+                                                document.getElementById(`anexo-${id}`).remove();
+                                                // Atualizar contador se necessário via JS
+                                            } else {
+                                                alert('Erro ao remover anexo.');
+                                            }
+                                        })
+                                        .catch(error => console.error('Erro:', error));
+                                }
+                            }
+
+                            // Validação do campo de anexos para Cotação
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const anexoInput = document.getElementById('anexo');
+                                if (anexoInput) {
+                                    anexoInput.addEventListener('change', function () {
+                                        const files = this.files;
+                                        const numArquivosSelecionados = files.length;
+                                        const errorDiv = document.getElementById('anexoError');
+                                        const MAX_ANEXOS = 5;
+                                        const listaExistentes = document.getElementById('lista-anexos-existentes');
+                                        const anexosExistentes = listaExistentes ? listaExistentes.querySelectorAll('li').length : 0;
+
+                                        if (numArquivosSelecionados + anexosExistentes > MAX_ANEXOS) {
+                                            const disponivel = MAX_ANEXOS - anexosExistentes;
+                                            errorDiv.textContent = `Limite excedido! Máximo ${MAX_ANEXOS} arquivos. Você já tem ${anexosExistentes} anexado(s), pode adicionar mais ${disponivel}.`;
+                                            this.classList.add('is-invalid');
+                                            errorDiv.style.display = 'block';
+                                            alert(`Limite de ${MAX_ANEXOS} arquivos excedido! Você selecionou ${numArquivosSelecionados} arquivo(s) mas só pode adicionar mais ${disponivel}.`);
+                                            this.value = '';
+                                            return;
+                                        }
+
+                                        let valid = true;
+                                        for (let i = 0; i < files.length; i++) {
+                                            const ext = files[i].name.split('.').pop().toLowerCase();
+                                            if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'jpg', 'jpeg', 'png'].indexOf(ext) === -1) {
+                                                valid = false;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!valid) {
+                                            errorDiv.textContent = 'Formato inválido! Formatos permitidos: PDF, Word, Excel e Imagens.';
+                                            this.classList.add('is-invalid');
+                                            errorDiv.style.display = 'block';
+                                            this.value = '';
+                                        } else {
+                                            errorDiv.textContent = '';
+                                            this.classList.remove('is-invalid');
+                                        }
+                                    });
+                                }
+                            });
+                        </script>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3" id="motivoVendaPerdidaGroup" style="display: none;">
+                                <label for="motivo_venda_perdida" class="form-label">Motivo da Cotação Perdida <span
+                                        class="text-danger">*</span></label>
+                                <textarea class="form-control" id="motivo_venda_perdida" name="motivo_venda_perdida"
+                                    rows="2">{{ cotacao.motivo_venda_perdida if cotacao }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Campo Próximo Status e Botões de Navegação #}
+                <div class="card-footer d-flex justify-content-end align-items-center flex-wrap flex-md-nowrap gap-2">
+                    <div class="order-2 order-md-1 d-flex align-items-center" style="min-width:250px;max-width:350px;">
+                        <label for="status" class="form-label mb-0 fw-bold text-success me-2"
+                            style="white-space:nowrap;">Próximo Status <span class="text-danger">*</span></label>
+                        <select class="form-select border-success shadow-sm fw-bold" id="status" name="status" required
+                            style="border-width:2px;">
+                            {% for status in status_options %}
+                            <option value="{{ status }}" {% if cotacao and cotacao.status==status %}selected{% endif %}>
+                                {{ status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4 mt-md-0 order-1 order-md-2">
+                        <button type="button" class="btn btn-secondary" id="prevButton">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </button>
+                        {# Botão Cancelar #}
+                        <a href="{{ url_for('routes.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="button" class="btn btn-secondary" id="nextButton">
+                            <i class="fas fa-save"></i> Avançar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if produtos_json is defined and produtos_json %}
+<script>
+    // @ts-nocheck
+    var produtos_json = {{ produtos_json| tojson | safe }};
+    window.produtosCotacao = produtos_json;
+    console.log('Template: produtos_json carregado:', produtos_json);
+    console.log('Template: window.produtosCotacao definido:', window.produtosCotacao);
+</script>
+{% else %}
+<script>
+    // @ts-nocheck
+    var produtos_json = [];
+    window.produtosCotacao = [];
+    console.log('Template: Nenhum produto encontrado, arrays vazios criados');
+</script>
+{% endif %}
+
+
+
+<script src="{{ url_for('static', filename='js/cotacao.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,1352 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if pesquisa else 'Criação - Nova' }} Pesquisa | Pesquisas de Mercado{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilo personalizado para o botão de escolher arquivo */
+    input[type="file"]::file-selector-button {
+        background-color: #198754;
+        color: white;
+        border: none;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+        background-color: #157347;
+    }
+
+    .form-select.border-success:focus,
+    .form-select.border-success {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25) !important;
+    }
+
+    /* Estilos para campos inválidos */
+    .is-invalid {
+        border-color: #dc3545 !important;
+        padding-right: calc(1.5em + 0.75rem) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right calc(0.375em + 0.1875rem) center !important;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+    }
+
+    .is-invalid:focus {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+    }
+
+    .is-invalid~.invalid-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+
+    /* Estilos para campos válidos (sucesso) */
+    .is-valid {
+        border-color: #198754 !important;
+        padding-right: calc(1.5em + 0.75rem) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right calc(0.375em + 0.1875rem) center !important;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+    }
+
+    .is-valid:focus {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+    }
+</style>
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">{{ 'Editar' if pesquisa else 'Criação - Nova' }} Pesquisa</h2>
+        </div>
+        <div class="card-body">
+            {# Exibir status atual com estilização de badge #}
+            <div class="mb-3">
+                <p class="mb-0">
+                    {% if pesquisa %}
+                    <strong>Status atual:</strong>
+                    {% set status = pesquisa.status %}
+                    {% if status == 'Análise Comercial' %}
+                    <span class="badge status-analise-comercial">{{ status }}</span>
+                    {% elif status == 'Análise Suprimentos' %}
+                    <span class="badge status-analise-suprimentos">{{ status }}</span>
+                    {% elif status == 'Liberado para Venda' %}
+                    <span class="badge status-liberado">{{ status }}</span>
+                    {% elif status == 'Cotação Perdida' %}
+                    <span class="badge status-perdida">{{ status }}</span>
+                    {% else %}
+                    {# Fallback para outros status, caso existam #}
+                    <span class="badge status-criacao">{{ status }}</span>
+                    {% endif %}
+                    {% else %}
+                    <strong>Fase atual:</strong>
+                    <span class="badge status-criacao">Criação</span>
+                    <br>
+                    <small class="text-muted">Status será definido após finalizar a criação</small>
+                    {% endif %}
+                </p>
+            </div>
+
+            <form id="pesquisaForm">
+                {% if pesquisa %}
+                <input type="hidden" id="pesquisaId" value="{{ pesquisa.id }}">
+                {% endif %}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="filial" class="form-label">Filial <span class="text-danger">*</span></label>
+                        <select class="form-select" id="filial" name="nome_filial" required></select>
+                        <div id="filial_status" class="form-text" style="display: none;">
+                            <small class="text-muted"><i class="fas fa-spinner fa-spin"></i> <span
+                                    id="filial_status_text">Carregando filiais...</span></small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="mesorregiao_geografica" class="form-label">Mesoregião Geográfica <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="mesorregiao_geografica" name="numero_mesorregiao"
+                            readonly required value="{{ pesquisa.numero_mesorregiao if pesquisa else '' }}">
+                    </div>
+                </div>
+
+                <input type="hidden" id="data" name="data"
+                    value="{{ pesquisa.data.strftime('%Y-%m-%d') if pesquisa and pesquisa.data else '' }}">
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="matricula_cooperado" class="form-label">Matrícula do Cooperado <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="matricula_cooperado" name="matricula_cooperado"
+                            required value="{{ pesquisa.matricula_cooperado if pesquisa else '' }}">
+                        <div id="loading_matricula" class="mt-2" style="display: none;">
+                            <small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Buscando
+                                cooperado...</small>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label for="nome_cooperado" class="form-label">Nome do Cooperado <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nome_cooperado" name="nome_cooperado" required
+                            value="{{ pesquisa.nome_cooperado if pesquisa else '' }}">
+                        <div id="loading_nome" class="mt-2" style="display: none;">
+                            <small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Buscando
+                                cooperado...</small>
+                        </div>
+                        <div id="sugestoes_nome" class="mt-2" style="display: none;">
+                            <div class="list-group">
+                                <!-- Sugestões serão inseridas aqui -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="cultura" class="form-label">Cultura <span class="text-danger">*</span></label>
+                        <select class="form-select" id="cultura" name="cultura" required>
+                            <option value="">Selecione...</option>
+                            <option value="Café" {{ 'selected' if pesquisa and pesquisa.cultura and
+                                pesquisa.cultura=='Café' }}>Café</option>
+                            <option value="Soja" {{ 'selected' if pesquisa and pesquisa.cultura and
+                                pesquisa.cultura=='Soja' }}>Soja</option>
+                            <option value="Milho" {{ 'selected' if pesquisa and pesquisa.cultura and
+                                pesquisa.cultura=='Milho' }}>Milho</option>
+                            <option value="Hortifruti" {{ 'selected' if pesquisa and pesquisa.cultura and
+                                pesquisa.cultura=='Hortifruti' }}>Hortifruti</option>
+                            <option value="Pastagem" {{ 'selected' if pesquisa and pesquisa.cultura and
+                                pesquisa.cultura=='Pastagem' }}>Pastagem</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="codigo_produto" class="form-label">Código do Produto <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="codigo_produto" name="codigo_produto" required
+                            value="{{ pesquisa.codigo_produto if pesquisa else '' }}">
+                        <div id="loading_codigo_produto" class="text-muted small" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Buscando produto...
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="nome_produto" class="form-label">Nome do Produto <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nome_produto" name="nome_produto" required
+                            value="{{ pesquisa.nome_produto if pesquisa else '' }}">
+                        <div id="loading_nome_produto" class="text-muted small" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Buscando produto...
+                        </div>
+                        <div id="sugestoes_produto" class="mt-2" style="display: none;">
+                            <div class="list-group">
+                                <!-- Sugestões serão inseridas aqui -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="quantidade_cotada" class="form-label">Qtd. Cotada <span
+                                class="text-danger">*</span></label>
+                        <input type="number" step="0.01" class="form-control" id="quantidade_cotada"
+                            name="quantidade_cotada" required
+                            value="{{ pesquisa.quantidade_cotada if pesquisa else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="forma_pagamento" class="form-label">Forma de Pagamento <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="forma_pagamento" name="forma_pagamento" required
+                            value="{{ pesquisa.forma_pagamento if pesquisa else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="nome_vendedor" class="form-label">Vendedor</label>
+                        <input type="text" class="form-control" id="nome_vendedor" name="nome_vendedor"
+                            value="{{ pesquisa.nome_vendedor if pesquisa and pesquisa.nome_vendedor else '' }}">
+                    </div>
+                </div>
+
+                <div class="row mb-3 mt-3">
+                    <div class="col-md-4">
+                        <label for="analista_comercial" class="form-label">Analista Comercial <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="analista_comercial" name="analista_comercial"
+                            required value="{{ pesquisa.analista_comercial if pesquisa else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="comprador" class="form-label">Comprador</label>
+                        <input type="text" class="form-control" id="comprador" name="comprador"
+                            value="{{ pesquisa.comprador if pesquisa and pesquisa.comprador else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="prazo_entrega" class="form-label">Prazo de Entrega</label>
+                        <input type="date" class="form-control" id="prazo_entrega" name="prazo_entrega"
+                            value="{{ pesquisa.prazo_entrega.strftime('%Y-%m-%d') if pesquisa and pesquisa.prazo_entrega else '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes"
+                        rows="3">{{ pesquisa.observacoes if pesquisa else '' }}</textarea>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="nome_concorrente" class="form-label">Nome do Concorrente <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nome_concorrente" name="nome_concorrente" required
+                            value="{{ pesquisa.nome_concorrente if pesquisa else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="valor_concorrente" class="form-label">Valor no Concorrente (R$) <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control money-input" id="valor_concorrente"
+                            name="valor_concorrente" required
+                            value="{% if pesquisa and pesquisa.valor_concorrente %}{{ 'R$ {:,.2f}'.format(pesquisa.valor_concorrente).replace(',', 'X').replace('.', ',').replace('X', '.') }}{% else %}R$ 0,00{% endif %}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="valor_cooxupe" class="form-label">Valor na Cooxupé (R$) <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control money-input" id="valor_cooxupe" name="valor_cooxupe"
+                            required
+                            value="{% if pesquisa and pesquisa.valor_cooxupe %}{{ 'R$ {:,.2f}'.format(pesquisa.valor_cooxupe).replace(',', 'X').replace('.', ',').replace('X', '.') }}{% else %}R$ 0,00{% endif %}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="anexos" class="form-label">Anexar Arquivos (Máx. 5)</label>
+                    <input type="file" class="form-control" id="anexo" name="anexos[]" multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png">
+                    <div class="form-text">Formatos permitidos: PDF, Word, Excel e Imagens. Limite de 5 arquivos no
+                        total.
+                    </div>
+                    <div class="invalid-feedback" id="anexoError"></div>
+
+                    <!-- Lista de Anexos Existentes -->
+                    {% if pesquisa and pesquisa.anexos %}
+                    <div class="mt-2">
+                        <label class="form-label text-muted small">Arquivos Anexados:</label>
+                        <ul class="list-group list-group-flush" id="lista-anexos-existentes">
+                            {% for anexo in pesquisa.anexos %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-2"
+                                id="anexo-{{ anexo.id }}">
+                                <a href="{{ url_for('routes.download_file', filename=anexo.filename) }}" target="_blank"
+                                    class="text-decoration-none">
+                                    <i class="fas fa-paperclip me-2"></i>{{ anexo.filename }}
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-anexo"
+                                    data-id="{{ anexo.id }}" onclick="removerAnexo({{ anexo.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <script>
+                    function removerAnexo(id) {
+                        if (confirm('Tem certeza que deseja remover este anexo?')) {
+                            fetch(`/api/anexos/${id}`, {
+                                method: 'DELETE',
+                            })
+                                .then(response => {
+                                    if (response.ok) {
+                                        document.getElementById(`anexo-${id}`).remove();
+                                    } else {
+                                        alert('Erro ao remover anexo.');
+                                    }
+                                })
+                                .catch(error => console.error('Erro:', error));
+                        }
+                    }
+                </script>
+                {% if pesquisa %}
+                <div class="mb-3">
+                    <label class="form-label">Data da Última Modificação</label>
+                    <p class="form-control-plaintext">{{ pesquisa.data_ultima_modificacao.strftime('%d/%m/%Y %H:%M') if
+                        pesquisa and pesquisa.data_ultima_modificacao else 'N/A' }}</p>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+        <div class="card-footer d-flex justify-content-end align-items-center flex-wrap flex-md-nowrap gap-2">
+            <div class="order-2 order-md-1 d-flex align-items-center" style="min-width:250px;max-width:350px;">
+                <label for="status" class="form-label mb-0 fw-bold text-success me-2"
+                    style="white-space:nowrap;">Próximo Status <span class="text-danger">*</span></label>
+                <select class="form-select border-success shadow-sm fw-bold" id="status" name="status" required
+                    style="border-width:2px;">
+                    {% for status in status_options %}
+                    <option value="{{ status }}" {% if pesquisa and pesquisa.status==status %}selected{% endif %}>{{
+                        status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a href="{{ url_for('routes.index') }}" class="btn btn-secondary order-1 order-md-2">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="button" class="btn btn-secondary order-1 order-md-2" id="btnSalvarPesquisa">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Definir a data atual se não for uma edição
+        if (!$('#pesquisaId').val()) {
+            const hoje = new Date();
+            // Formatar data local no formato yyyy-mm-dd
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const ano = hoje.getFullYear();
+            const dataFormatada = `${ano}-${mes}-${dia}`;
+            $('#data').val(dataFormatada);
+        }
+
+        // Variáveis para edição
+        var filialInicial = "{{ pesquisa.nome_filial if pesquisa else '' }}";
+        var mesorregiaoInicial = "{{ pesquisa.numero_mesorregiao if pesquisa else '' }}";
+
+        console.log('🔍 Verificando elementos do formulário...');
+        console.log('📍 Campo filial:', $('#filial').length ? 'Encontrado' : 'NÃO ENCONTRADO');
+        console.log('📍 Campo mesorregiao:', $('#mesorregiao_geografica').length ? 'Encontrado' : 'NÃO ENCONTRADO');
+        console.log('📝 Filial inicial:', filialInicial);
+        console.log('📝 Mesorregião inicial:', mesorregiaoInicial);
+
+        // Verificar se jQuery está funcionando
+        console.log('🔧 jQuery version:', $.fn.jquery);
+        console.log('🔧 jQuery disponível:', typeof $ !== 'undefined');
+
+        // Verificar se o campo filial tem o ID correto
+        console.log('🔍 Elemento com ID filial:', document.getElementById('filial'));
+        console.log('🔍 Elemento com seletor #filial:', $('#filial')[0]);
+
+        // Variável global para armazenar dados das filiais
+        let filiaisData = [];
+
+        // Função para carregar filiais
+        function carregarFiliais() {
+            console.log('🔄 Iniciando carregamento de filiais...');
+
+            // Verificar se o campo filial existe
+            const filialSelect = $('#filial');
+            if (!filialSelect.length) {
+                console.error('❌ Campo filial não encontrado!');
+                return;
+            }
+
+            console.log('🎯 Campo filial encontrado, fazendo requisição para API...');
+
+            // Mostrar indicador de carregamento
+            filialSelect.html('<option value="">Carregando filiais...</option>');
+            $('#filial_status').show();
+            $('#filial_status_text').text('Carregando filiais da API...');
+
+            // Fazer requisição para a API
+            $.ajax({
+                url: '/api/filiais',
+                method: 'GET',
+                dataType: 'json',
+                timeout: 8000,
+                success: function (data) {
+                    console.log('✅ Filiais carregadas com sucesso:', data);
+                    filiaisData = data;
+
+                    // Limpar e popular o campo
+                    filialSelect.empty().append('<option value="">Selecione uma filial</option>');
+
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        data.forEach(function (item) {
+                            if (item && item.FILIAL) {
+                                filialSelect.append('<option value="' + item.FILIAL + '">' + item.FILIAL + '</option>');
+                            }
+                        });
+
+                        console.log('✅ Campo filial populado com', data.length, 'opções');
+                        $('#filial_status').hide();
+
+                        // Se estiver editando, selecionar a filial correta
+                        if (filialInicial) {
+                            console.log('📝 Editando pesquisa, selecionando filial:', filialInicial);
+                            filialSelect.val(filialInicial).trigger('change');
+                        }
+                    } else {
+                        console.error('❌ Dados recebidos não são um array válido ou estão vazios:', data);
+                        filialSelect.html('<option value="">Erro: dados inválidos</option>');
+                        $('#filial_status_text').text('Erro: usando filiais de backup');
+                        // Usar fallback se a API não retornar dados válidos
+                        carregarFiliaisFallback();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('❌ Erro ao carregar filiais:');
+                    console.error('Status:', status);
+                    console.error('Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    console.error('Status Code:', xhr.status);
+
+                    // Tentar usar fallback em caso de erro
+                    console.log('🔄 Tentando usar filiais de fallback...');
+                    $('#filial_status_text').text('Erro na API: usando filiais de backup');
+                    carregarFiliaisFallback();
+                }
+            });
+        }
+
+        // Função de fallback para carregar filiais estáticas (caso a API falhe)
+        function carregarFiliaisFallback() {
+            console.log('🔄 Carregando filiais de fallback...');
+
+            const filialSelect = $('#filial');
+            if (!filialSelect.length) return;
+
+            // Lista de filiais estáticas como fallback
+            const filiaisFallback = [
+                '076:Loja Campos Gerais',
+                '300:Unidade Avançada Muzambinho',
+                '301:Unidade Avançada Conceição Aparecida',
+                '302:Unidade Avançada Carmo do Rio Claro',
+                '303:Unidade Avançada Guapé',
+                '304:Unidade Avançada São Sebastião do Paraíso',
+                '305:Unidade Avançada Três Pontas',
+                '306:Unidade Avançada Varginha',
+                '307:Unidade Avançada Lavras',
+                '308:Unidade Avançada Perdões'
+            ];
+
+            filiaisData = filiaisFallback.map(filial => ({
+                FILIAL: filial,
+                'MESOREGIÃO GEOGRÁFICA': 'REGIONAL - Thalles'
+            }));
+
+            filialSelect.empty().append('<option value="">Selecione uma filial</option>');
+            filiaisFallback.forEach(filial => {
+                filialSelect.append('<option value="' + filial + '">' + filial + '</option>');
+            });
+
+            console.log('✅ Filiais de fallback carregadas:', filiaisFallback.length);
+            $('#filial_status_text').text('Usando filiais de backup (' + filiaisFallback.length + ' opções)');
+
+            // Se estiver editando, selecionar a filial correta
+            if (filialInicial) {
+                console.log('📝 Editando pesquisa, selecionando filial (fallback):', filialInicial);
+                filialSelect.val(filialInicial).trigger('change');
+            }
+        }
+
+
+
+        // Carregar filiais imediatamente
+        console.log('🚀 Iniciando carregamento de filiais...');
+        carregarFiliais();
+
+        // Timeout de segurança: se não carregar em 3 segundos, usar fallback
+        setTimeout(function () {
+            if ($('#filial option').length <= 1) {
+                console.log('⏰ Timeout: usando filiais de fallback...');
+                carregarFiliaisFallback();
+            }
+        }, 3000);
+
+        // Função para preencher analista baseado na mesorregião
+        function preencherAnalistaPorMesorregiao(mesorregiao) {
+            const analistaInput = $('#analista_comercial');
+            if (!analistaInput.length) return;
+
+            let analista = '';
+
+            // Mapeamento de mesorregiões para analistas
+            switch (mesorregiao) {
+                case 'REGIONAL 7 - Joaquim':
+                    analista = 'Joaquim';
+                    break;
+                case 'REGIONAL - Ana Cássia':
+                    analista = 'Ana Cássia';
+                    break;
+                case 'REGIONAL - Leiliele':
+                    analista = 'Leiliele';
+                    break;
+                case 'REGIONAL - Rafael':
+                    analista = 'Rafael';
+                    break;
+                case 'REGIONAL - Thalles':
+                    analista = 'Thalles';
+                    break;
+                default:
+                    analista = '';
+            }
+
+            analistaInput.val(analista);
+        }
+
+        $('#filial').on('change', function () {
+            const selected = $(this).val();
+            const culturaSelecionada = $('#cultura').val();
+
+            console.log('🎯 Evento change do campo filial acionado');
+            console.log('📋 Filial selecionada:', selected);
+            console.log('🌾 Cultura selecionada:', culturaSelecionada);
+
+            // Se a cultura for Soja ou Milho, não alterar a mesorregião (manter Regional 7)
+            if (culturaSelecionada === 'Soja' || culturaSelecionada === 'Milho') {
+                console.log('🌾 Cultura Soja/Milho detectada, mantendo Regional 7');
+                return;
+            }
+
+            console.log('🔍 Procurando mesorregião para filial:', selected);
+            const found = filiaisData.find(f => f.FILIAL === selected);
+
+            if (found) {
+                console.log('✅ Mesorregião encontrada:', found['MESOREGIÃO GEOGRÁFICA']);
+                $('#mesorregiao_geografica').val(found['MESOREGIÃO GEOGRÁFICA']);
+                // Preencher analista baseado na nova mesorregião
+                preencherAnalistaPorMesorregiao(found['MESOREGIÃO GEOGRÁFICA']);
+            } else {
+                console.log('❌ Mesorregião não encontrada para filial:', selected);
+                $('#mesorregiao_geografica').val('');
+                // Limpar analista se não houver mesorregião
+                preencherAnalistaPorMesorregiao('');
+            }
+        });
+
+        // Formatação de valores monetários
+        function formatarMoeda(valor) {
+            if (valor === null || valor === undefined || valor === '') return '';
+
+            if (typeof valor === 'string') {
+                valor = valor.replace(/[^0-9,.]/g, '');
+                valor = valor.replace(',', '.');
+                valor = parseFloat(valor);
+            }
+
+            return valor.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function parseMoeda(valor) {
+            if (!valor) return 0;
+            if (typeof valor === 'number') return valor;
+            valor = valor.toString().replace(/[^0-9,]/g, '');
+            var partes = valor.split(',');
+            var inteiro = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '');
+            var decimal = partes[1] ? partes[1] : '00';
+            var resultado = parseFloat(inteiro + '.' + decimal);
+            return isNaN(resultado) ? 0 : resultado;
+        }
+
+        $('.money-input').on('blur', function () {
+            const valor = parseMoeda($(this).val());
+            $(this).val(formatarMoeda(valor));
+        });
+
+        // Validação do campo de anexos
+        $('#anexo').on('change', function () {
+            const files = this.files;
+            const numArquivosSelecionados = files.length; // Capturar ANTES de limpar
+            const errorDiv = $('#anexoError');
+            const MAX_ANEXOS = 5;
+            const anexosExistentes = $('#lista-anexos-existentes li').length;
+
+            if (numArquivosSelecionados + anexosExistentes > MAX_ANEXOS) {
+                const disponivel = MAX_ANEXOS - anexosExistentes;
+                errorDiv.text(`Limite excedido! Máximo ${MAX_ANEXOS} arquivos. Você já tem ${anexosExistentes} anexado(s), pode adicionar mais ${disponivel}.`);
+                $(this).addClass('is-invalid');
+                errorDiv.show();
+                // Mostrar alerta ANTES de limpar o input
+                alert(`Limite de ${MAX_ANEXOS} arquivos excedido! Você selecionou ${numArquivosSelecionados} arquivo(s) mas só pode adicionar mais ${disponivel}.`);
+                this.value = ''; // Limpar seleção DEPOIS do alert
+                return;
+            }
+
+            let valid = true;
+            for (let i = 0; i < files.length; i++) {
+                const ext = files[i].name.split('.').pop().toLowerCase();
+                // Permitir PDF, Doc, Docx, Xls, Xlsx, Csv, Txt, Jpg, Jpeg, Png
+                if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'jpg', 'jpeg', 'png'].indexOf(ext) === -1) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (!valid) {
+                errorDiv.text('Formato inválido! Formatos permitidos: PDF, Word, Excel e Imagens.');
+                $(this).addClass('is-invalid');
+                errorDiv.show();
+                this.value = '';
+            } else {
+                errorDiv.text('');
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        // Função para validar campos obrigatórios
+        function validarFormulario() {
+            // Lista dos 13 campos obrigatórios conforme Melhoria 12 (incluindo Cultura)
+            const camposObrigatorios = [
+                'filial',
+                'mesorregiao_geografica',
+                'matricula_cooperado',
+                'nome_cooperado',
+                'cultura',
+                'codigo_produto',
+                'nome_produto',
+                'quantidade_cotada',
+                'forma_pagamento',
+                'analista_comercial',
+                'nome_concorrente',
+                'valor_concorrente',
+                'valor_cooxupe'
+            ];
+
+            let isValid = true;
+            let firstInvalidField = null;
+
+            // Validação especial para filial (não obrigatória para Regional 7)
+            const culturaSelecionada = $('#cultura').val();
+            const filialSelect = $('#filial');
+
+            // Se a cultura for Soja ou Milho, a filial não é obrigatória
+            if (culturaSelecionada === 'Soja' || culturaSelecionada === 'Milho') {
+                filialSelect.removeAttr('required');
+                // Remover da lista de obrigatórios temporariamente
+                const index = camposObrigatorios.indexOf('filial');
+                if (index > -1) {
+                    camposObrigatorios.splice(index, 1);
+                }
+            } else {
+                filialSelect.attr('required', 'required');
+            }
+
+            // Validar apenas os campos obrigatórios
+            camposObrigatorios.forEach(function (campoId) {
+                const campo = $(`#${campoId}`);
+                if (campo.length) {
+                    if (!campo.val() || !campo.val().toString().trim()) {
+                        isValid = false;
+                        campo.addClass('is-invalid');
+                        if (!firstInvalidField) {
+                            firstInvalidField = campo[0];
+                        }
+                    } else {
+                        campo.removeClass('is-invalid');
+                    }
+                }
+            });
+
+            if (!isValid) {
+                alert('Por favor, preencha todos os campos obrigatórios antes de salvar.');
+                if (firstInvalidField) {
+                    $(firstInvalidField).focus();
+                }
+            }
+
+            return isValid;
+        }
+
+        // Enviar formulário
+        $('#btnSalvarPesquisa').on('click', function () {
+            // Validar campos obrigatórios
+            if (!validarFormulario()) {
+                return;
+            }
+
+            // Coletar dados do formulário em um objeto JS
+            const formData = {
+                data: $('#data').val(),
+                nome_filial: $('#filial').val(),
+                numero_mesorregiao: $('#mesorregiao_geografica').val(),
+                matricula_cooperado: $('#matricula_cooperado').val(),
+                nome_cooperado: $('#nome_cooperado').val(),
+                cultura: $('#cultura').val(),
+                codigo_produto: $('#codigo_produto').val(),
+                nome_produto: $('#nome_produto').val(),
+                quantidade_cotada: parseFloat($('#quantidade_cotada').val()),
+                forma_pagamento: $('#forma_pagamento').val(),
+                prazo_entrega: $('#prazo_entrega').val(),
+                nome_vendedor: $('#nome_vendedor').val(),
+                nome_concorrente: $('#nome_concorrente').val(),
+                valor_concorrente: parseMoeda($('#valor_concorrente').val()),
+                valor_cooxupe: parseMoeda($('#valor_cooxupe').val()),
+                analista_comercial: $('#analista_comercial').val(),
+                comprador: $('#comprador').val(),
+                observacoes: $('#observacoes').val(),
+                status: $('#status').val()
+            };
+
+
+
+
+
+            // Adicionar ID se estiver editando
+            const pesquisaId = $('#pesquisaId').val();
+            if (pesquisaId) {
+                formData.id = parseInt(pesquisaId);
+            }
+
+            // Lidar com múltiplos anexos
+            const fileInput = $('#anexo')[0];
+            const files = fileInput.files;
+
+            // Definir URL e método conforme criação ou edição
+            let url, method;
+            if (pesquisaId) {
+                url = `/api/pesquisas/${pesquisaId}`;
+                method = 'PUT';
+            } else {
+                url = '/api/pesquisas';
+                method = 'POST';
+            }
+
+            if (files.length > 0) {
+                const uploadData = new FormData();
+                // Adicionar TODOS os arquivos
+                for (let i = 0; i < files.length; i++) {
+                    uploadData.append('anexos[]', files[i]);
+                }
+                for (const key in formData) {
+                    uploadData.append(key, formData[key]);
+                }
+                $.ajax({
+                    url: url,
+                    method: method,
+                    data: uploadData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.id) {
+                            alert('Pesquisa salva com sucesso!');
+                            window.location.href = '/';
+                        } else {
+                            alert('Erro ao salvar pesquisa: ' + (response.error || 'Erro desconhecido'));
+                        }
+                    },
+                    error: function (xhr) {
+                        alert('Erro ao salvar pesquisa: ' + xhr.responseText);
+                    }
+                });
+            } else {
+                // Se for edição, enviar como JSON via PUT
+                $.ajax({
+                    url: url,
+                    method: method,
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function (response) {
+                        if (response.id) {
+                            alert('Pesquisa salva com sucesso!');
+                            window.location.href = '/';
+                        } else {
+                            alert('Erro ao salvar pesquisa: ' + (response.error || 'Erro desconhecido'));
+                        }
+                    },
+                    error: function (xhr) {
+                        alert('Erro ao salvar pesquisa: ' + xhr.responseText);
+                    }
+                });
+            }
+        });
+
+        // Listener para o campo cultura (Melhorias 4 e 6)
+        $('#cultura').on('change', function () {
+            const culturaSelecionada = $(this).val();
+            const filialSelect = $('#filial');
+            const filialRequired = $('<span class="text-danger">*</span>');
+
+            // Se a cultura for Soja ou Milho, alterar mesorregião para Regional 7 - Joaquim
+            if (culturaSelecionada === 'Soja' || culturaSelecionada === 'Milho') {
+                $('#mesorregiao_geografica').val('REGIONAL 7 - Joaquim');
+                // Manter a filial selecionada, apenas remover obrigatoriedade
+                if (filialSelect.length) {
+                    filialSelect.removeAttr('required');
+                    filialSelect.addClass('form-control-plaintext');
+                    filialSelect.removeClass('form-select');
+                    filialSelect.css('backgroundColor', '#f8f9fa');
+                }
+                // Remover obrigatoriedade da filial
+                filialSelect.find('option:first').removeAttr('required');
+
+                // Preencher analista Joaquim para Regional 7
+                preencherAnalistaPorMesorregiao('REGIONAL 7 - Joaquim');
+            } else {
+                // Para outras culturas, restaurar a mesorregião baseada na filial selecionada
+                if (filialSelect.val()) {
+                    const found = filiaisData.find(f => f.FILIAL === filialSelect.val());
+                    if (found) {
+                        $('#mesorregiao_geografica').val(found['MESOREGIÃO GEOGRÁFICA']);
+                        // Preencher analista baseado na mesorregião restaurada
+                        preencherAnalistaPorMesorregiao(found['MESOREGIÃO GEOGRÁFICA']);
+                    }
+                } else {
+                    // Se não houver filial selecionada, limpar analista
+                    preencherAnalistaPorMesorregiao('');
+                }
+                // Restaurar campo de filial como obrigatório
+                if (filialSelect.length) {
+                    filialSelect.attr('required', 'required');
+                    filialSelect.removeClass('form-control-plaintext');
+                    filialSelect.addClass('form-select');
+                    filialSelect.css('backgroundColor', '');
+                }
+            }
+        });
+
+        // Função para buscar produto por código
+        function buscarProdutoPorCodigo(codigo) {
+            if (!codigo || codigo.trim().length < 2) return;
+
+            $.ajax({
+                url: '/api/produtos/buscar',
+                method: 'GET',
+                data: { codigo: codigo },
+                success: function (response) {
+                    if (response.success) {
+                        // Produto encontrado
+                        $('#nome_produto').val(response.nome);
+                        $('#nome_produto').addClass('is-valid').removeClass('is-invalid');
+                        setTimeout(() => {
+                            $('#nome_produto').removeClass('is-valid');
+                        }, 2000);
+                        console.log(`Produto encontrado por código: ${response.codigo} → ${response.nome}`);
+                    } else {
+                        // Produto não encontrado
+                        $('#nome_produto').val('');
+                        $('#nome_produto').removeClass('is-valid').addClass('is-invalid');
+                        $('#nome_produto').attr('title', response.error || 'Produto não Encontrado');
+                        setTimeout(() => {
+                            $('#nome_produto').removeClass('is-invalid');
+                        }, 3000);
+                        console.log(`Produto não encontrado para código: ${codigo}`);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Erro na busca por código:', xhr);
+                    $('#nome_produto').val('');
+                    $('#nome_produto').removeClass('is-valid').addClass('is-invalid');
+                    $('#nome_produto').attr('title', 'Erro na busca');
+                    setTimeout(() => {
+                        $('#nome_produto').removeClass('is-invalid');
+                    }, 3000);
+                }
+            });
+        }
+
+        // Função para buscar produto por nome
+        function buscarProdutoPorNome(nome) {
+            if (!nome || nome.trim().length < 3) return;
+
+            $.ajax({
+                url: '/api/produtos/buscar',
+                method: 'GET',
+                data: { nome: nome },
+                success: function (response) {
+                    if (response.success) {
+                        // Produto encontrado
+                        $('#codigo_produto').val(response.codigo);
+                        $('#codigo_produto').addClass('is-valid').removeClass('is-invalid');
+                        setTimeout(() => {
+                            $('#codigo_produto').removeClass('is-valid');
+                        }, 2000);
+                        console.log(`Produto encontrado por nome: ${response.nome} → ${response.codigo}`);
+                    } else {
+                        // Produto não encontrado
+                        $('#codigo_produto').val('');
+                        $('#codigo_produto').removeClass('is-valid').addClass('is-invalid');
+                        $('#codigo_produto').attr('title', response.error || 'Código não Encontrado');
+                        setTimeout(() => {
+                            $('#codigo_produto').removeClass('is-invalid');
+                        }, 3000);
+                        console.log(`Produto não encontrado para nome: ${nome}`);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Erro na busca por nome:', xhr);
+                    $('#codigo_produto').val('');
+                    $('#codigo_produto').removeClass('is-valid').addClass('is-invalid');
+                    $('#codigo_produto').attr('title', 'Erro na busca');
+                    setTimeout(() => {
+                        $('#codigo_produto').removeClass('is-invalid');
+                    }, 3000);
+                }
+            });
+        }
+
+        // Event listeners para autocompletar produtos
+        let timeoutCodigoProdutoAutocomplete, timeoutNomeProdutoAutocomplete;
+
+        $('#codigo_produto').on('input', function () {
+            const codigo = $(this).val();
+
+            // Limpar timeout anterior
+            clearTimeout(timeoutCodigoProdutoAutocomplete);
+
+            // Aguardar 500ms após o usuário parar de digitar
+            timeoutCodigoProdutoAutocomplete = setTimeout(() => {
+                buscarProdutoPorCodigo(codigo);
+            }, 500);
+        });
+
+        $('#nome_produto').on('input', function () {
+            const nome = $(this).val();
+
+            // Limpar timeout anterior
+            clearTimeout(timeoutNomeProdutoAutocomplete);
+
+            // Aguardar 500ms após o usuário parar de digitar
+            timeoutNomeProdutoAutocomplete = setTimeout(() => {
+                buscarProdutoPorNome(nome);
+            }, 500);
+        });
+
+        // Adicionar feedback visual para campos obrigatórios
+        $('input, select, textarea').on('input change', function () {
+            const campoId = $(this).attr('id');
+            const camposObrigatorios = [
+                'filial', 'mesorregiao_geografica', 'matricula_cooperado', 'nome_cooperado',
+                'cultura', 'codigo_produto', 'nome_produto', 'quantidade_cotada', 'forma_pagamento',
+                'analista_comercial', 'nome_concorrente', 'valor_concorrente', 'valor_cooxupe'
+            ];
+
+            // Verificar se é um campo obrigatório
+            if (camposObrigatorios.includes(campoId)) {
+                // Validação especial para filial
+                if (campoId === 'filial') {
+                    const culturaSelecionada = $('#cultura').val();
+                    if (culturaSelecionada === 'Soja' || culturaSelecionada === 'Milho') {
+                        $(this).removeClass('is-invalid');
+                        return;
+                    }
+                }
+
+                if ($(this).val() && $(this).val().toString().trim()) {
+                    $(this).removeClass('is-invalid');
+                } else {
+                    $(this).addClass('is-invalid');
+                }
+            } else {
+                // Para campos não obrigatórios, remover classe de inválido
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        // FUNCIONALIDADE DE BUSCA DINÂMICA DE COOPERADOS
+        console.log('🚀 Inicializando busca dinâmica de cooperados...');
+
+        let timeoutMatricula, timeoutNome;
+
+        // Função para buscar cooperado por matrícula
+        async function buscarCooperadoPorMatricula(matricula) {
+            console.log('🔍 Buscando cooperado por matrícula:', matricula);
+
+            if (!matricula.trim()) {
+                $('#nome_cooperado').val('');
+                $('#nome_cooperado').prop('disabled', false);
+                return;
+            }
+
+            try {
+                $('#loading_matricula').show();
+                $('#nome_cooperado').prop('disabled', true);
+
+                const response = await fetch(`/api/cooperados/buscar?matricula=${encodeURIComponent(matricula)}`);
+                const data = await response.json();
+
+                console.log('📡 Resposta da API (matrícula):', data);
+
+                if (data.success) {
+                    $('#nome_cooperado').val(data.nome);
+                    $('#nome_cooperado').addClass('is-valid').removeClass('is-invalid');
+                    console.log('✅ Cooperado encontrado:', data.nome);
+                } else {
+                    $('#nome_cooperado').val('Cooperado não encontrado');
+                    $('#nome_cooperado').addClass('is-invalid').removeClass('is-valid');
+                    console.log('❌ Cooperado não encontrado');
+                }
+            } catch (error) {
+                console.error('🚨 Erro ao buscar cooperado por matrícula:', error);
+                $('#nome_cooperado').val('Erro na busca');
+                $('#nome_cooperado').addClass('is-invalid').removeClass('is-valid');
+            } finally {
+                $('#loading_matricula').hide();
+            }
+        }
+
+        // Função para buscar cooperado por nome
+        async function buscarCooperadoPorNome(nome) {
+            console.log('🔍 Buscando cooperado por nome:', nome);
+
+            if (!nome.trim()) {
+                $('#matricula_cooperado').val('');
+                $('#matricula_cooperado').prop('disabled', false);
+                $('#sugestoes_nome').hide();
+                return;
+            }
+
+            try {
+                $('#loading_nome').show();
+                $('#matricula_cooperado').prop('disabled', true);
+
+                const response = await fetch(`/api/cooperados/buscar?nome=${encodeURIComponent(nome)}`);
+                const data = await response.json();
+
+                console.log('📡 Resposta da API (nome):', data);
+
+                if (data.success) {
+                    if (data.tipo_busca === 'nome' && data.resultados && data.resultados.length > 0) {
+                        // Mostrar sugestões
+                        mostrarSugestoesCooperado(data.resultados);
+                        console.log('🔍 Mostrando sugestões:', data.resultados.length);
+                    } else {
+                        // Nome exato encontrado
+                        $('#matricula_cooperado').val(data.matricula);
+                        $('#matricula_cooperado').addClass('is-valid').removeClass('is-invalid');
+                        $('#sugestoes_nome').hide();
+                        console.log('✅ Nome exato encontrado:', data.nome);
+                    }
+                } else {
+                    $('#matricula_cooperado').val('Matrícula não encontrada');
+                    $('#matricula_cooperado').addClass('is-invalid').removeClass('is-valid');
+                    $('#sugestoes_nome').hide();
+                    console.log('❌ Matrícula não encontrada');
+                }
+            } catch (error) {
+                console.error('🚨 Erro ao buscar cooperado por nome:', error);
+                $('#matricula_cooperado').val('Erro na busca');
+                $('#matricula_cooperado').addClass('is-invalid').removeClass('is-valid');
+                $('#sugestoes_nome').hide();
+            } finally {
+                $('#loading_nome').hide();
+            }
+        }
+
+        // Função para mostrar sugestões de nomes
+        function mostrarSugestoesCooperado(resultados) {
+            console.log('📋 Mostrando sugestões:', resultados);
+
+            const sugestoesContainer = $('#sugestoes_nome .list-group');
+            sugestoesContainer.empty();
+
+            resultados.forEach(resultado => {
+                const item = $('<a>')
+                    .attr('href', '#')
+                    .addClass('list-group-item list-group-item-action')
+                    .text(resultado.nome)
+                    .on('click', function (e) {
+                        e.preventDefault();
+                        $('#nome_cooperado').val(resultado.nome);
+                        $('#matricula_cooperado').val(resultado.matricula);
+                        $('#nome_cooperado').addClass('is-valid');
+                        $('#matricula_cooperado').addClass('is-valid');
+                        $('#nome_cooperado').removeClass('is-invalid');
+                        $('#matricula_cooperado').removeClass('is-invalid');
+                        $('#sugestoes_nome').hide();
+                        $('#matricula_cooperado').prop('disabled', false);
+                        console.log('✅ Selecionado:', resultado.nome, resultado.matricula);
+                    });
+                sugestoesContainer.append(item);
+            });
+
+            $('#sugestoes_nome').show();
+        }
+
+        // REGISTRAR EVENT LISTENERS
+        console.log('🎯 Registrando event listeners...');
+
+        // Event listener para busca por matrícula
+        $('#matricula_cooperado').on('input', function () {
+            const matricula = $(this).val();
+            console.log('🎯 Input matrícula:', matricula);
+
+            // Limpar timeout anterior
+            clearTimeout(timeoutMatricula);
+
+            // Limpar validações anteriores
+            $(this).removeClass('is-valid is-invalid');
+            $('#nome_cooperado').removeClass('is-valid is-invalid');
+
+            // Definir novo timeout para busca
+            timeoutMatricula = setTimeout(() => {
+                buscarCooperadoPorMatricula(matricula);
+            }, 300);
+        });
+
+        // Event listener para busca por nome
+        $('#nome_cooperado').on('input', function () {
+            const nome = $(this).val();
+            console.log('🎯 Input nome:', nome);
+
+            // Limpar timeout anterior
+            clearTimeout(timeoutNome);
+
+            // Limpar validações anteriores
+            $(this).removeClass('is-valid is-invalid');
+            $('#matricula_cooperado').removeClass('is-valid is-invalid');
+
+            // Ocultar sugestões se o campo estiver vazio
+            if (!nome.trim()) {
+                $('#sugestoes_nome').hide();
+                $('#matricula_cooperado').prop('disabled', false);
+            }
+
+            // Definir novo timeout para busca
+            timeoutNome = setTimeout(() => {
+                buscarCooperadoPorNome(nome);
+            }, 300);
+        });
+
+        // Limpar sugestões quando clicar fora
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#nome_cooperado, #sugestoes_nome').length) {
+                $('#sugestoes_nome').hide();
+            }
+        });
+
+        // Limpar campos quando a página carregar (se não houver valores)
+        if (!$('#matricula_cooperado').val() && !$('#nome_cooperado').val()) {
+            $('#matricula_cooperado').removeClass('is-valid is-invalid');
+            $('#nome_cooperado').removeClass('is-valid is-invalid');
+        }
+
+        console.log('✅ Busca dinâmica de cooperados inicializada com sucesso!');
+        console.log('Elementos encontrados:');
+        console.log('- matricula_cooperado:', $('#matricula_cooperado').length);
+        console.log('- nome_cooperado:', $('#nome_cooperado').length);
+        console.log('- loading_matricula:', $('#loading_matricula').length);
+        console.log('- loading_nome:', $('#loading_nome').length);
+        console.log('- sugestoes_nome:', $('#sugestoes_nome').length);
+
+        // FUNCIONALIDADE DE BUSCA DINÂMICA DE PRODUTOS
+        console.log('🚀 Inicializando busca dinâmica de produtos...');
+
+        let timeoutCodigoProduto, timeoutNomeProduto;
+
+        // Função para buscar produto por código
+        async function buscarProdutoPorCodigo(codigo) {
+            console.log('🔍 Buscando produto por código:', codigo);
+
+            if (!codigo.trim()) {
+                $('#nome_produto').val('');
+                $('#nome_produto').prop('disabled', false);
+                return;
+            }
+
+            try {
+                $('#loading_codigo_produto').show();
+                $('#nome_produto').prop('disabled', true);
+
+                const response = await fetch(`/api/produtos/buscar?codigo=${encodeURIComponent(codigo)}`);
+                const data = await response.json();
+
+                console.log('📡 Resposta da API (código):', data);
+
+                if (data.success) {
+                    $('#nome_produto').val(data.nome);
+                    $('#nome_produto').addClass('is-valid').removeClass('is-invalid');
+                    console.log('✅ Produto encontrado:', data.nome);
+                } else {
+                    $('#nome_produto').val('Produto não encontrado');
+                    $('#nome_produto').addClass('is-invalid').removeClass('is-valid');
+                    console.log('❌ Produto não encontrado');
+                }
+            } catch (error) {
+                console.error('🚨 Erro ao buscar produto por código:', error);
+                $('#nome_produto').val('Erro na busca');
+                $('#nome_produto').addClass('is-invalid').removeClass('is-valid');
+            } finally {
+                $('#loading_codigo_produto').hide();
+            }
+        }
+
+        // Função para buscar produto por nome
+        async function buscarProdutoPorNome(nome) {
+            console.log('🔍 Buscando produto por nome:', nome);
+
+            if (!nome.trim()) {
+                $('#codigo_produto').val('');
+                $('#codigo_produto').prop('disabled', false);
+                $('#sugestoes_produto').hide();
+                return;
+            }
+
+            try {
+                $('#loading_nome_produto').show();
+                $('#codigo_produto').prop('disabled', true);
+
+                const response = await fetch(`/api/produtos/buscar?nome=${encodeURIComponent(nome)}`);
+                const data = await response.json();
+
+                console.log('📡 Resposta da API (nome):', data);
+
+                if (data.success) {
+                    if (data.tipo_busca === 'nome' && data.resultados && data.resultados.length > 0) {
+                        // Mostrar sugestões
+                        mostrarSugestoesProduto(data.resultados);
+                        console.log('🔍 Mostrando sugestões:', data.resultados.length);
+                    } else {
+                        // Nome exato encontrado
+                        $('#codigo_produto').val(data.codigo);
+                        $('#codigo_produto').addClass('is-valid').removeClass('is-invalid');
+                        $('#sugestoes_produto').hide();
+                        console.log('✅ Nome exato encontrado:', data.nome);
+                    }
+                } else {
+                    $('#codigo_produto').val('Código não encontrado');
+                    $('#codigo_produto').addClass('is-invalid').removeClass('is-valid');
+                    $('#sugestoes_produto').hide();
+                    console.log('❌ Código não encontrado');
+                }
+            } catch (error) {
+                console.error('🚨 Erro ao buscar produto por nome:', error);
+                $('#codigo_produto').val('Erro na busca');
+                $('#codigo_produto').addClass('is-invalid').removeClass('is-valid');
+                $('#sugestoes_produto').hide();
+            } finally {
+                $('#loading_nome_produto').hide();
+            }
+        }
+
+        // Função para mostrar sugestões de produtos
+        function mostrarSugestoesProduto(resultados) {
+            console.log('📋 Mostrando sugestões:', resultados);
+
+            const sugestoesContainer = $('#sugestoes_produto .list-group');
+            sugestoesContainer.empty();
+
+            resultados.forEach(resultado => {
+                const item = $('<a>')
+                    .attr('href', '#')
+                    .addClass('list-group-item list-group-item-action')
+                    .text(resultado.nome)
+                    .on('click', function (e) {
+                        e.preventDefault();
+                        $('#nome_produto').val(resultado.nome);
+                        $('#codigo_produto').val(resultado.codigo);
+                        $('#nome_produto').addClass('is-valid');
+                        $('#codigo_produto').addClass('is-valid');
+                        $('#nome_produto').removeClass('is-invalid');
+                        $('#codigo_produto').removeClass('is-invalid');
+                        $('#sugestoes_produto').hide();
+                        $('#codigo_produto').prop('disabled', false);
+                        console.log('✅ Selecionado:', resultado.nome, resultado.codigo);
+                    });
+                sugestoesContainer.append(item);
+            });
+
+            $('#sugestoes_produto').show();
+        }
+
+        // REGISTRAR EVENT LISTENERS PARA PRODUTOS
+        console.log('🎯 Registrando event listeners para produtos...');
+
+        // Event listener para busca por código do produto
+        $('#codigo_produto').on('input', function () {
+            const codigo = $(this).val();
+            console.log('🎯 Input código produto:', codigo);
+
+            // Limpar timeout anterior
+            clearTimeout(timeoutCodigoProduto);
+
+            // Limpar validações anteriores
+            $(this).removeClass('is-valid is-invalid');
+            $('#nome_produto').removeClass('is-valid is-invalid');
+
+            // Definir novo timeout para busca
+            timeoutCodigoProduto = setTimeout(() => {
+                buscarProdutoPorCodigo(codigo);
+            }, 300);
+        });
+
+        // Event listener para busca por nome do produto
+        $('#nome_produto').on('input', function () {
+            const nome = $(this).val();
+            console.log('🎯 Input nome produto:', nome);
+
+            // Limpar timeout anterior
+            clearTimeout(timeoutNomeProduto);
+
+            // Limpar validações anteriores
+            $(this).removeClass('is-valid is-invalid');
+            $('#codigo_produto').removeClass('is-valid is-invalid');
+
+            // Ocultar sugestões se o campo estiver vazio
+            if (!nome.trim()) {
+                $('#sugestoes_produto').hide();
+                $('#codigo_produto').prop('disabled', false);
+            }
+
+            // Definir novo timeout para busca
+            timeoutNomeProduto = setTimeout(() => {
+                buscarProdutoPorNome(nome);
+            }, 300);
+        });
+
+        // Limpar sugestões quando clicar fora
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#nome_produto, #sugestoes_produto').length) {
+                $('#sugestoes_produto').hide();
+            }
+        });
+
+        console.log('✅ Busca dinâmica de produtos inicializada com sucesso!');
+        console.log('Elementos encontrados:');
+        console.log('- codigo_produto:', $('#codigo_produto').length);
+        console.log('- nome_produto:', $('#nome_produto').length);
+        console.log('- loading_codigo_produto:', $('#loading_codigo_produto').length);
+        console.log('- loading_nome_produto:', $('#loading_nome_produto').length);
+        console.log('- sugestoes_produto:', $('#sugestoes_produto').length);
+    });
+</script>
+{% endblock %}

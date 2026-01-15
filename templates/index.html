@@ -1,0 +1,1404 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+
+
+
+    <!-- Seção Visão Geral -->
+    <div class="overview-section">
+        <h2 class="section-title">
+            <i class="fas fa-chart-pie"></i>
+            Visão Geral
+        </h2>
+        <div class="overview-cards">
+            <div class="overview-card active" data-type="andamento">
+                <div class="card-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number" id="count-andamento">0</div>
+                    <div class="card-label">Cotações em Andamento</div>
+                </div>
+            </div>
+            <div class="overview-card" data-type="pesquisas">
+                <div class="card-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number" id="count-pesquisas">0</div>
+                    <div class="card-label">Pesquisas em Andamento</div>
+                </div>
+            </div>
+            <div class="overview-card" data-type="finalizadas">
+                <div class="card-icon">
+                    <i class="fas fa-file-circle-check"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number" id="count-finalizadas">0</div>
+                    <div class="card-label">Cotações Finalizadas</div>
+                </div>
+            </div>
+            <div class="overview-card" data-type="pesquisas-finalizadas">
+                <div class="card-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number" id="count-pesquisas-finalizadas">0</div>
+                    <div class="card-label">Pesquisas Finalizadas</div>
+                </div>
+            </div>
+            <div class="overview-card" data-type="perdidas">
+                <div class="card-icon">
+                    <i class="fas fa-file-circle-xmark"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number" id="count-perdidas">0</div>
+                    <div class="card-label">Cotações Perdidas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Conteúdo Dinâmico -->
+    <div class="content-section">
+        <!-- Cotações em Andamento (padrão) -->
+        <div class="content-card active" id="content-andamento">
+            <div class="content-header">
+                <div class="content-header-top">
+                    <div class="content-title">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <h3>Cotações em Andamento</h3>
+                    </div>
+                    <div class="content-status">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Atualizado há 5 minutos</span>
+                        <button type="button" class="btn btn-success btn-sm ms-3" id="exportAllAndamento"
+                            onclick="exportarTodos('andamento')" disabled>
+                            <i class="fas fa-file-excel text-white"></i> Exportar Todos
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-filters">
+                    <div class="panel-search">
+                        <select class="panel-filter-select" id="searchTypeAndamento"
+                            onchange="atualizarPlaceholder('andamento')">
+                            <option value="todos">Todos</option>
+                            <option value="id">ID</option>
+                            <option value="matricula">Matrícula</option>
+                            <option value="nome">Nome</option>
+                        </select>
+                        <input type="text" placeholder="Pesquisar..." class="panel-search-input" id="searchAndamento">
+                        <button type="button" class="panel-search-btn" onclick="filtrarPainel('andamento')">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content-table">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaAndamento">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllAndamento" class="form-check-input"
+                                        onchange="toggleSelectAll('andamento')">
+                                </th>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Filial</th>
+                                <th>Matrícula</th>
+                                <th>Cooperado</th>
+                                <th>Valor Total</th>
+                                <th>Status</th>
+                                <th>Tempo</th>
+                                <th>Últ. Modif.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-pagination">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination" id="pagination-list-andamento">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&lt; Anterior</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Próximo &gt;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="pagination-info" id="pagination-info-andamento">Página 1 de 1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pesquisas de Mercado -->
+        <div class="content-card" id="content-pesquisas">
+            <div class="content-header">
+                <div class="content-header-top">
+                    <div class="content-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h3>Pesquisas em Andamento</h3>
+                    </div>
+                    <div class="content-status">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Atualizado há 5 minutos</span>
+                        <button type="button" class="btn btn-success btn-sm ms-3" id="exportAllPesquisas"
+                            onclick="exportarTodos('pesquisas')" disabled>
+                            <i class="fas fa-file-excel text-white"></i> Exportar Todos
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-filters">
+                    <div class="panel-search">
+                        <select class="panel-filter-select" id="searchTypePesquisas"
+                            onchange="atualizarPlaceholder('pesquisas')">
+                            <option value="todos">Todos</option>
+                            <option value="id">ID</option>
+                            <option value="matricula">Matrícula</option>
+                            <option value="nome">Nome</option>
+                        </select>
+                        <input type="text" placeholder="Pesquisar..." class="panel-search-input" id="searchPesquisas">
+                        <button type="button" class="panel-search-btn" onclick="filtrarPainel('pesquisas')">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content-table">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaPesquisas">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllPesquisas" class="form-check-input"
+                                        onchange="toggleSelectAll('pesquisas')">
+                                </th>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Filial</th>
+                                <th>Matrícula</th>
+                                <th>Cooperado</th>
+                                <th>Valor Total</th>
+                                <th>Status</th>
+                                <th>Tempo</th>
+                                <th>Últ. Modif.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-pagination">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination" id="pagination-list-pesquisas">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&lt; Anterior</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Próximo &gt;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="pagination-info" id="pagination-info-pesquisas">Página 1 de 1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cotações Finalizadas -->
+        <div class="content-card" id="content-finalizadas">
+            <div class="content-header">
+                <div class="content-header-top">
+                    <div class="content-title">
+                        <i class="fas fa-file-circle-check"></i>
+                        <h3>Cotações Finalizadas</h3>
+                    </div>
+                    <div class="content-status">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Atualizado há 5 minutos</span>
+                        <button type="button" class="btn btn-success btn-sm ms-3" id="exportAllFinalizadas"
+                            onclick="exportarTodos('finalizadas')" disabled>
+                            <i class="fas fa-file-excel text-white"></i> Exportar Todos
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-filters">
+                    <div class="panel-search">
+                        <select class="panel-filter-select" id="searchTypeFinalizadas"
+                            onchange="atualizarPlaceholder('finalizadas')">
+                            <option value="todos">Todos</option>
+                            <option value="id">ID</option>
+                            <option value="matricula">Matrícula</option>
+                            <option value="nome">Nome</option>
+                        </select>
+                        <input type="text" placeholder="Pesquisar..." class="panel-search-input" id="searchFinalizadas">
+                        <button type="button" class="panel-search-btn" onclick="filtrarPainel('finalizadas')">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content-table">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaFinalizadas">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllFinalizadas" class="form-check-input"
+                                        onchange="toggleSelectAll('finalizadas')">
+                                </th>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Filial</th>
+                                <th>Matrícula</th>
+                                <th>Cooperado</th>
+                                <th>Valor Total</th>
+                                <th>Status</th>
+                                <th>Tempo</th>
+                                <th>Últ. Modif.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-pagination">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination" id="pagination-list-finalizadas">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&lt; Anterior</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Próximo &gt;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="pagination-info" id="pagination-info-finalizadas">Página 1 de 1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pesquisas Finalizadas -->
+        <div class="content-card" id="content-pesquisas-finalizadas">
+            <div class="content-header">
+                <div class="content-header-top">
+                    <div class="content-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h3>Pesquisas Finalizadas</h3>
+                    </div>
+                    <div class="content-status">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Atualizado há 5 minutos</span>
+                        <button type="button" class="btn btn-success btn-sm ms-3" id="exportAllPesquisasFinalizadas"
+                            onclick="exportarTodos('pesquisas-finalizadas')" disabled>
+                            <i class="fas fa-file-excel text-white"></i> Exportar Todos
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-filters">
+                    <div class="panel-search">
+                        <select class="panel-filter-select" id="searchTypePesquisasFinalizadas"
+                            onchange="atualizarPlaceholder('pesquisas-finalizadas')">
+                            <option value="todos">Todos</option>
+                            <option value="id">ID</option>
+                            <option value="matricula">Matrícula</option>
+                            <option value="nome">Nome</option>
+                        </select>
+                        <input type="text" placeholder="Pesquisar..." class="panel-search-input"
+                            id="searchPesquisasFinalizadas">
+                        <button type="button" class="panel-search-btn" onclick="filtrarPainel('pesquisas-finalizadas')">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content-table">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaPesquisasFinalizadas">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllPesquisasFinalizadas" class="form-check-input"
+                                        onchange="toggleSelectAll('pesquisas-finalizadas')">
+                                </th>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Filial</th>
+                                <th>Matrícula</th>
+                                <th>Cooperado</th>
+                                <th>Valor Total</th>
+                                <th>Status</th>
+                                <th>Tempo</th>
+                                <th>Últ. Modif.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-pagination">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination" id="pagination-list-pesquisas-finalizadas">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&lt; Anterior</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Próximo &gt;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="pagination-info" id="pagination-info-pesquisas-finalizadas">Página 1 de 1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cotações Perdidas -->
+        <div class="content-card" id="content-perdidas">
+            <div class="content-header">
+                <div class="content-header-top">
+                    <div class="content-title">
+                        <i class="fas fa-file-circle-xmark"></i>
+                        <h3>Cotações Perdidas</h3>
+                    </div>
+                    <div class="content-status">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Atualizado há 5 minutos</span>
+                        <button type="button" class="btn btn-success btn-sm ms-3" id="exportAllPerdidas"
+                            onclick="exportarTodos('perdidas')" disabled>
+                            <i class="fas fa-file-excel text-white"></i> Exportar Todos
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-filters">
+                    <div class="panel-search">
+                        <select class="panel-filter-select" id="searchTypePerdidas"
+                            onchange="atualizarPlaceholder('perdidas')">
+                            <option value="todos">Todos</option>
+                            <option value="id">ID</option>
+                            <option value="matricula">Matrícula</option>
+                            <option value="nome">Nome</option>
+                        </select>
+                        <input type="text" placeholder="Pesquisar..." class="panel-search-input" id="searchPerdidas">
+                        <button type="button" class="panel-search-btn" onclick="filtrarPainel('perdidas')">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content-table">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabelaPerdidas">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllPerdidas" class="form-check-input"
+                                        onchange="toggleSelectAll('perdidas')">
+                                </th>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Filial</th>
+                                <th>Matrícula</th>
+                                <th>Cooperado</th>
+                                <th>Valor Total</th>
+                                <th>Status</th>
+                                <th>Tempo</th>
+                                <th>Últ. Modif.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-pagination">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination" id="pagination-list-perdidas">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&lt; Anterior</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Próximo &gt;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="pagination-info" id="pagination-info-perdidas">Página 1 de 1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza que deseja excluir esta cotação?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Estado de paginação por card (10 itens por página)
+        window.paginacao = {
+            andamento: { paginaAtual: 1, totalPaginas: 1, tamanhoPagina: 10 },
+            pesquisas: { paginaAtual: 1, totalPaginas: 1, tamanhoPagina: 10 },
+            finalizadas: { paginaAtual: 1, totalPaginas: 1, tamanhoPagina: 10 },
+            'pesquisas-finalizadas': { paginaAtual: 1, totalPaginas: 1, tamanhoPagina: 10 },
+            perdidas: { paginaAtual: 1, totalPaginas: 1, tamanhoPagina: 10 }
+        };
+
+        // Storage para dados originais (antes de filtragem)
+        window.dadosOriginais = {
+            andamento: [],
+            pesquisas: [],
+            finalizadas: [],
+            'pesquisas-finalizadas': [],
+            perdidas: []
+        };
+        // Carregar contadores iniciais
+        carregarContadores();
+
+        // Carregar dados iniciais (Cotações em Andamento por padrão)
+        carregarCotacoes('andamento', '#tabelaAndamento tbody');
+
+        // Inicializar status de atualização
+        atualizarStatusAtualizacao();
+
+        // Event listeners para os cards de visão geral
+        $('.overview-card').on('click', function () {
+            const tipo = $(this).data('type');
+
+            // Atualizar cards ativos
+            $('.overview-card').removeClass('active');
+            $(this).addClass('active');
+
+            // Atualizar conteúdo visível
+            $('.content-card').removeClass('active');
+            $('#content-' + tipo).addClass('active');
+
+            // Carregar dados correspondentes
+            carregarDadosPorTipo(tipo);
+
+            // Atualizar descrição baseada no card selecionado
+            atualizarDescricaoCard(tipo);
+        });
+
+        // Filtros de status e tipo
+        $('#statusFilter, #tipoFilter').on('change', function () {
+            const status = $('#statusFilter').val();
+            const tipo = $('#tipoFilter').val();
+            aplicarFiltros(status, tipo);
+        });
+
+        // Atualizar dados a cada 5 minutos
+        setInterval(function () {
+            carregarContadores();
+            const cardAtivo = $('.overview-card.active').data('type');
+            if (cardAtivo) {
+                carregarDadosPorTipo(cardAtivo);
+            }
+            atualizarStatusAtualizacao();
+        }, 300000); // 5 minutos
+
+        // Atualizar status de atualização a cada minuto
+        setInterval(function () {
+            atualizarStatusAtualizacao();
+        }, 60000); // 1 minuto
+
+        // Corrigir sobreposição dos dropdowns: elevar a linha ativa
+        $(document).on('show.bs.dropdown', '.table .dropdown', function () {
+            try {
+                $('.table tbody tr').css('z-index', 1);
+                $(this).closest('tr').css('position', 'relative').css('z-index', 30000);
+            } catch (e) { }
+        });
+        $(document).on('hide.bs.dropdown', '.table .dropdown', function () {
+            try {
+                $(this).closest('tr').css('z-index', 1);
+            } catch (e) { }
+        });
+
+        // Mapeamento de IDs para tipos (usado pelos event listeners)
+        const tipoMap = {
+            'andamento': 'andamento',
+            'pesquisas': 'pesquisas',
+            'finalizadas': 'finalizadas',
+            'pesquisasfinalizadas': 'pesquisas-finalizadas',
+            'perdidas': 'perdidas'
+        };
+
+        // Event listener para filtrar em tempo real enquanto digita
+        $('.panel-search-input').on('input', function () {
+            const tipo = $(this).attr('id').replace('search', '').toLowerCase();
+            filtrarPainel(tipoMap[tipo] || tipo);
+        });
+
+        // Limpar filtro ao pressionar Escape
+        $('.panel-search-input').on('keydown', function (e) {
+            if (e.key === 'Escape') {
+                $(this).val('');
+                const tipo = $(this).attr('id').replace('search', '').toLowerCase();
+                filtrarPainel(tipoMap[tipo] || tipo);
+            }
+        });
+    });
+
+    // Função para carregar contadores
+    function carregarContadores() {
+        $.ajax({
+            url: '/api/dashboard/stats',
+            method: 'GET',
+            success: function (data) {
+                $('#count-andamento').text(data.andamento || 0);
+                $('#count-pesquisas').text(data.pesquisas || 0);
+                $('#count-finalizadas').text(data.finalizadas || 0);
+                $('#count-pesquisas-finalizadas').text(data.pesquisas_finalizadas || 0);
+                $('#count-perdidas').text(data.perdidas || 0);
+            },
+            error: function (error) {
+                console.error('Erro ao carregar contadores:', error);
+            }
+        });
+    }
+
+    // Função para carregar dados por tipo
+    function carregarDadosPorTipo(tipo) {
+        // Resetar para página 1 sempre que trocar de card
+        if (window.paginacao && window.paginacao[tipo]) {
+            window.paginacao[tipo].paginaAtual = 1;
+        }
+        switch (tipo) {
+            case 'andamento':
+                carregarCotacoes('andamento', '#tabelaAndamento tbody');
+                break;
+            case 'pesquisas':
+                carregarPesquisas('pesquisa', '#tabelaPesquisas tbody');
+                break;
+            case 'finalizadas':
+                carregarCotacoes('finalizadas', '#tabelaFinalizadas tbody');
+                break;
+            case 'pesquisas-finalizadas':
+                carregarPesquisas('finalizadas', '#tabelaPesquisasFinalizadas tbody');
+                break;
+            case 'perdidas':
+                carregarCotacoes('perdidas', '#tabelaPerdidas tbody');
+                break;
+        }
+    }
+
+    // Função para atualizar descrição dos cards
+    function atualizarDescricaoCard(tipo) {
+        const descricoes = {
+            'andamento': 'Cotações que estão aguardando resposta dos fornecedores ou em processo de análise.',
+            'pesquisas': 'Pesquisas em andamento para análise de preços e concorrência.',
+            'finalizadas': 'Cotações que foram concluídas e liberadas para venda.',
+            'pesquisas-finalizadas': 'Pesquisas de mercado que foram concluídas e analisadas.',
+            'perdidas': 'Cotações que não foram fechadas e foram perdidas para a concorrência.'
+        };
+
+        const descricaoElement = $('.content-card.active .content-description');
+        if (descricaoElement.length && descricoes[tipo]) {
+            descricaoElement.text(descricoes[tipo]);
+        }
+    }
+
+    // Função para atualizar status de atualização
+    function atualizarStatusAtualizacao() {
+        const agora = new Date();
+        const hora = agora.getHours().toString().padStart(2, '0');
+        const minuto = agora.getMinutes().toString().padStart(2, '0');
+
+        $('.content-status span').text('Atualizado às ' + hora + ':' + minuto);
+    }
+
+    // Função para carregar cotações
+    function carregarCotacoes(tipo, targetSelector) {
+        $.ajax({
+            url: '/api/cotacoes?tipo=' + tipo,
+            method: 'GET',
+            success: function (data) {
+                // Armazenar dados originais
+                window.dadosOriginais[tipo] = data;
+                renderizarTabelaCotacoes(data, targetSelector, tipo);
+                atualizarTotalResultados(data.length, tipo);
+            },
+            error: function (error) {
+                console.error('Erro ao carregar cotações:', error);
+                renderizarMensagemErro(targetSelector, 'Erro ao carregar cotações');
+            }
+        });
+    }
+
+    // Função para carregar pesquisas
+    function carregarPesquisas(status, targetSelector) {
+        const tipoStorage = status === 'finalizadas' ? 'pesquisas-finalizadas' : 'pesquisas';
+        $.ajax({
+            url: '/api/pesquisas/' + status,
+            method: 'GET',
+            success: function (data) {
+                // Armazenar dados originais
+                window.dadosOriginais[tipoStorage] = data;
+                renderizarTabelaPesquisas(data, targetSelector, status);
+                atualizarTotalResultados(data.length, tipoStorage);
+            },
+            error: function (error) {
+                console.error('Erro ao carregar pesquisas:', error);
+                renderizarMensagemErro(targetSelector, 'Erro ao carregar pesquisas');
+            }
+        });
+    }
+
+    // Função para atualizar placeholder baseado no tipo de busca selecionado
+    function atualizarPlaceholder(tipo) {
+        const searchTypeId = {
+            'andamento': 'searchTypeAndamento',
+            'pesquisas': 'searchTypePesquisas',
+            'finalizadas': 'searchTypeFinalizadas',
+            'pesquisas-finalizadas': 'searchTypePesquisasFinalizadas',
+            'perdidas': 'searchTypePerdidas'
+        };
+
+        const searchInputId = {
+            'andamento': 'searchAndamento',
+            'pesquisas': 'searchPesquisas',
+            'finalizadas': 'searchFinalizadas',
+            'pesquisas-finalizadas': 'searchPesquisasFinalizadas',
+            'perdidas': 'searchPerdidas'
+        };
+
+        const searchType = document.getElementById(searchTypeId[tipo]);
+        const searchInput = document.getElementById(searchInputId[tipo]);
+
+        if (searchType && searchInput) {
+            const placeholders = {
+                'todos': 'Pesquisar...',
+                'id': 'Digite o ID...',
+                'matricula': 'Digite a matrícula...',
+                'nome': 'Digite o nome...'
+            };
+            searchInput.placeholder = placeholders[searchType.value] || 'Pesquisar...';
+            // Aplicar filtro imediatamente quando mudar o tipo
+            filtrarPainel(tipo);
+        }
+    }
+
+    // Função para filtrar painel (pesquisa e filtro local)
+    function filtrarPainel(tipo) {
+        // Mapeamento de IDs dos campos
+        const searchInputId = {
+            'andamento': 'searchAndamento',
+            'pesquisas': 'searchPesquisas',
+            'finalizadas': 'searchFinalizadas',
+            'pesquisas-finalizadas': 'searchPesquisasFinalizadas',
+            'perdidas': 'searchPerdidas'
+        };
+
+        const searchTypeId = {
+            'andamento': 'searchTypeAndamento',
+            'pesquisas': 'searchTypePesquisas',
+            'finalizadas': 'searchTypeFinalizadas',
+            'pesquisas-finalizadas': 'searchTypePesquisasFinalizadas',
+            'perdidas': 'searchTypePerdidas'
+        };
+
+        const statusFilterId = {
+            'andamento': 'statusFilterAndamento',
+            'pesquisas': 'statusFilterPesquisas'
+        };
+
+        const targetSelector = {
+            'andamento': '#tabelaAndamento tbody',
+            'pesquisas': '#tabelaPesquisas tbody',
+            'finalizadas': '#tabelaFinalizadas tbody',
+            'pesquisas-finalizadas': '#tabelaPesquisasFinalizadas tbody',
+            'perdidas': '#tabelaPerdidas tbody'
+        };
+
+        // Obter valores dos filtros
+        const searchInput = document.getElementById(searchInputId[tipo]);
+        const searchType = document.getElementById(searchTypeId[tipo]);
+        const statusFilter = document.getElementById(statusFilterId[tipo]);
+
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        const searchTypeValue = searchType ? searchType.value : 'todos';
+        const statusValue = statusFilter ? statusFilter.value : '';
+
+        // Obter dados originais
+        let dados = window.dadosOriginais[tipo] || [];
+
+        // Aplicar filtro de pesquisa por texto baseado no tipo selecionado
+        if (query) {
+            dados = dados.filter(item => {
+                const id = String(item.id || '').toLowerCase();
+                const nome = String(item.nome_cooperado || '').toLowerCase();
+                const matricula = String(item.matricula_cooperado || '').toLowerCase();
+
+                switch (searchTypeValue) {
+                    case 'id':
+                        return id.includes(query);
+                    case 'matricula':
+                        return matricula.includes(query);
+                    case 'nome':
+                        return nome.includes(query);
+                    case 'todos':
+                    default:
+                        return id.includes(query) || nome.includes(query) || matricula.includes(query);
+                }
+            });
+        }
+
+        // Aplicar filtro de status (apenas para painéis em andamento)
+        if (statusValue) {
+            dados = dados.filter(item => item.status === statusValue);
+        }
+
+        // Resetar paginação
+        if (window.paginacao && window.paginacao[tipo]) {
+            window.paginacao[tipo].paginaAtual = 1;
+        }
+
+        // Renderizar dados filtrados
+        const isPesquisa = tipo === 'pesquisas' || tipo === 'pesquisas-finalizadas';
+        if (isPesquisa) {
+            const status = tipo === 'pesquisas-finalizadas' ? 'finalizadas' : 'pesquisa';
+            renderizarTabelaPesquisas(dados, targetSelector[tipo], status);
+        } else {
+            renderizarTabelaCotacoes(dados, targetSelector[tipo], tipo);
+        }
+
+        // Atualizar contagem
+        atualizarTotalResultados(dados.length, tipo);
+
+        console.log(`🔍 Filtro aplicado em ${tipo}: ${dados.length} resultados`);
+    }
+
+    // Função para renderizar tabela de cotações
+    function renderizarTabelaCotacoes(cotacoes, targetSelector, tipo) {
+        const tbody = $(targetSelector);
+        tbody.empty();
+
+        if (cotacoes.length === 0) {
+            const colSpan = $(targetSelector).closest('table').find('th').length;
+            tbody.html('<tr><td colspan="' + colSpan + '" class="text-center py-3">Nenhuma cotação encontrada</td></tr>');
+            return;
+        }
+        // Paginação no frontend
+        const estado = window.paginacao[tipo] || { paginaAtual: 1, tamanhoPagina: 10 };
+        const inicio = (estado.paginaAtual - 1) * estado.tamanhoPagina;
+        const fim = inicio + estado.tamanhoPagina;
+        const paginaDados = cotacoes.slice(inicio, fim);
+
+        paginaDados.forEach(function (cotacao) {
+            const statusClass = getStatusClass(cotacao.status);
+            const row = criarLinhaCotacao(cotacao, statusClass, tipo);
+            tbody.append(row);
+        });
+    }
+
+    // Função para formatar status (primeira letra maiúscula)
+    function formatarStatus(status) {
+        if (!status) return '-';
+        // Capitalizar primeira letra de cada palavra
+        const statusFormatado = status.toLowerCase().split(' ').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+
+        // Correção específica para "Liberado Para Venda" -> "Liberado para Venda"
+        if (statusFormatado === 'Liberado Para Venda') {
+            return 'Liberado para Venda';
+        }
+
+        return statusFormatado;
+    }
+
+    // Função para criar linha de cotação
+    function criarLinhaCotacao(cotacao, statusClass, tipo) {
+        const id = cotacao.id;
+        const data = cotacao.data;
+        const filial = cotacao.nome_filial;
+        const matricula = cotacao.matricula_cooperado || '-';
+        const cooperado = cotacao.nome_cooperado;
+        const valorTotal = cotacao.valor_total !== null && cotacao.valor_total !== undefined ? formatarMoeda(cotacao.valor_total) : '-';
+        const status = formatarStatus(cotacao.status);
+        const tempoStatus = cotacao.dias_no_status + 'd';
+        const ultimaMod = cotacao.data_ultima_modificacao;
+
+        let acoes = '';
+        // Verificar se o status permite edição
+        const statusBloqueados = ['Liberado para Venda', 'Cotação Perdida'];
+        const podeEditar = !statusBloqueados.includes(cotacao.status);
+
+        if (tipo === 'finalizadas') {
+            // Cotações Finalizadas: Exportar e Ir para Vendas
+            acoes = `<div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportarCotacao(${id})"><i class="fas fa-file-excel"></i> Exportar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="https://vendascooxupe.lightning.force.com/lightning/n/Criar_Pedido" target="_blank"><i class="fas fa-shopping-cart"></i> Ir para Vendas</a></li>
+                        </ul>
+                    </div>`;
+        } else if (tipo === 'perdidas' || !podeEditar) {
+            // Cotações Perdidas ou com status bloqueado: apenas Exportar
+            acoes = `<div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportarCotacao(${id})"><i class="fas fa-file-excel"></i> Exportar</a></li>
+                        </ul>
+                    </div>`;
+        } else {
+            // Cotações em Andamento: Editar, Exportar e Excluir
+            acoes = `<div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/cotacao/${id}"><i class="fas fa-edit"></i> Editar</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportarCotacao(${id})"><i class="fas fa-file-excel"></i> Exportar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="excluirCotacao(${id})"><i class="fas fa-trash"></i> Excluir</a></li>
+                        </ul>
+                    </div>`;
+        }
+
+        return `<tr>
+                    <td>
+                        <input type="checkbox" class="form-check-input row-checkbox" data-id="${id}" data-tipo="cotacao" onchange="updateExportButton('${tipo}')">
+                    </td>
+                    <td>${id}</td>
+                    <td>${data}</td>
+                    <td>${filial}</td>
+                    <td>${matricula}</td>
+                    <td>${cooperado}</td>
+                    <td>${valorTotal}</td>
+                    <td><span class="badge ${statusClass}">${status}</span></td>
+                    <td>${tempoStatus}</td>
+                    <td>${ultimaMod}</td>
+                    <td>${acoes}</td>
+                </tr>`;
+    }
+
+    // Função para renderizar tabela de pesquisas
+    function renderizarTabelaPesquisas(pesquisas, targetSelector, status) {
+        const tbody = $(targetSelector);
+        tbody.empty();
+
+        if (!pesquisas || pesquisas.length === 0) {
+            const colSpan = $(targetSelector).closest('table').find('th').length;
+            tbody.html('<tr><td colspan="' + colSpan + '" class="text-center py-3">Nenhuma pesquisa encontrada</td></tr>');
+            return;
+        }
+        const tipo = status === 'finalizadas' ? 'pesquisas-finalizadas' : 'pesquisas';
+        const estado = window.paginacao[tipo] || { paginaAtual: 1, tamanhoPagina: 10 };
+        const inicio = (estado.paginaAtual - 1) * estado.tamanhoPagina;
+        const fim = inicio + estado.tamanhoPagina;
+        const paginaDados = pesquisas.slice(inicio, fim);
+
+        paginaDados.forEach(function (pesquisa) {
+            const row = criarLinhaPesquisa(pesquisa, status);
+            tbody.append(row);
+        });
+    }
+
+    // Função para criar linha de pesquisa
+    function criarLinhaPesquisa(pesquisa, status) {
+        const id = pesquisa.id;
+        const data = pesquisa.data;
+        const filial = pesquisa.nome_filial;
+        const matricula = pesquisa.matricula_cooperado || '-';
+        const cooperado = pesquisa.nome_cooperado;
+        // Calcular valor total da pesquisa (usar valor_cooxupe ou valor_concorrente como referência)
+        const valorTotal = pesquisa.valor_cooxupe !== null && pesquisa.valor_cooxupe !== undefined ? formatarMoeda(pesquisa.valor_cooxupe) : (pesquisa.valor_concorrente !== null && pesquisa.valor_concorrente !== undefined ? formatarMoeda(pesquisa.valor_concorrente) : '-');
+        const statusText = formatarStatus(pesquisa.status);
+        const tempoStatus = calcularTempoNoStatus(pesquisa.data_entrada_status);
+        const ultimaMod = pesquisa.data_ultima_modificacao;
+
+        let acoes = '';
+        // Verificar se o status permite edição
+        const statusBloqueados = ['Liberado para Venda', 'Cotação Perdida'];
+        const podeEditar = !statusBloqueados.includes(pesquisa.status);
+
+        if (status === 'finalizadas' || !podeEditar) {
+            // Pesquisas Finalizadas ou com status bloqueado: Exportar e Ir para Vendas
+            acoes = `<div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportarPesquisa(${id})"><i class="fas fa-file-excel"></i> Exportar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="https://vendascooxupe.lightning.force.com/lightning/n/Criar_Pedido" target="_blank"><i class="fas fa-shopping-cart"></i> Ir para Vendas</a></li>
+                        </ul>
+                    </div>`;
+        } else {
+            // Pesquisas em Andamento: Editar, Exportar e Excluir
+            acoes = `<div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/pesquisa/${id}"><i class="fas fa-edit"></i> Editar</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportarPesquisa(${id})"><i class="fas fa-file-excel"></i> Exportar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="excluirPesquisa(${id})"><i class="fas fa-trash"></i> Excluir</a></li>
+                        </ul>
+                    </div>`;
+        }
+
+        const statusClass = getStatusClass(pesquisa.status);
+        return `<tr>
+                    <td>
+                        <input type="checkbox" class="form-check-input row-checkbox" data-id="${id}" data-tipo="pesquisa" onchange="updateExportButton('${status === 'finalizadas' ? 'pesquisas-finalizadas' : 'pesquisas'}')">
+                    </td>
+                    <td>${id}</td>
+                    <td>${data}</td>
+                    <td>${filial}</td>
+                    <td>${matricula}</td>
+                    <td>${cooperado}</td>
+                    <td>${valorTotal}</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>${tempoStatus}</td>
+                    <td>${ultimaMod}</td>
+                    <td>${acoes}</td>
+                </tr>`;
+    }
+
+    // Função para renderizar mensagem de erro
+    function renderizarMensagemErro(targetSelector, mensagem) {
+        const tbody = $(targetSelector);
+        const colSpan = $(targetSelector).closest('table').find('th').length;
+        tbody.html('<tr><td colspan="' + colSpan + '" class="text-center py-3 text-danger">' + mensagem + '</td></tr>');
+    }
+
+    // Função para atualizar total de resultados
+    function atualizarTotalResultados(total, tipo) {
+        // Atualiza texto "Página X de N" e re-renderiza os controles
+        const estado = window.paginacao[tipo];
+        if (!estado) return;
+        estado.totalPaginas = Math.max(1, Math.ceil((total || 0) / estado.tamanhoPagina));
+        const el = document.getElementById('pagination-info-' + tipo);
+        if (el) {
+            el.textContent = `Página ${estado.paginaAtual} de ${estado.totalPaginas}`;
+        }
+        renderizarPaginacao(tipo);
+    }
+
+    // Renderiza os botões de paginação básicos (Anterior, número atual, Próximo)
+    function renderizarPaginacao(tipo) {
+        const ul = document.getElementById('pagination-list-' + tipo);
+        const estado = window.paginacao[tipo];
+        if (!ul || !estado) return;
+        ul.innerHTML = '';
+        // Anterior
+        const liPrev = document.createElement('li');
+        liPrev.className = 'page-item' + (estado.paginaAtual === 1 ? ' disabled' : '');
+        liPrev.innerHTML = '<a class="page-link" href="#">&lt; Anterior</a>';
+        liPrev.onclick = function (e) { e.preventDefault(); mudarPagina(tipo, estado.paginaAtual - 1); };
+        ul.appendChild(liPrev);
+        // Número atual
+        const liAtual = document.createElement('li');
+        liAtual.className = 'page-item active';
+        liAtual.innerHTML = '<a class="page-link" href="#">' + estado.paginaAtual + '</a>';
+        ul.appendChild(liAtual);
+        // Próximo
+        const liNext = document.createElement('li');
+        liNext.className = 'page-item' + (estado.paginaAtual >= estado.totalPaginas ? ' disabled' : '');
+        liNext.innerHTML = '<a class="page-link" href="#">Próximo &gt;</a>';
+        liNext.onclick = function (e) { e.preventDefault(); mudarPagina(tipo, estado.paginaAtual + 1); };
+        ul.appendChild(liNext);
+    }
+
+    // Troca de página e recarrega os dados para refletir a nova janela
+    function mudarPagina(tipo, novaPagina) {
+        const estado = window.paginacao[tipo];
+        if (!estado) return;
+        if (novaPagina < 1 || novaPagina > estado.totalPaginas || novaPagina === estado.paginaAtual) return;
+        estado.paginaAtual = novaPagina;
+        // Recarregar dados do tipo para aplicar o slice da nova página
+        carregarDadosPorTipo(tipo);
+    }
+
+    // Função para aplicar filtros
+    function aplicarFiltros(status, tipo) {
+        // Implementar lógica de filtros se necessário
+        console.log('Aplicando filtros:', { status, tipo });
+    }
+
+    // Função para mostrar mensagens de feedback
+    function mostrarMensagem(mensagem, tipo = 'info') {
+        // Remover mensagens anteriores
+        $('.mensagem-feedback').remove();
+
+        const classe = tipo === 'success' ? 'alert-success' :
+            tipo === 'error' ? 'alert-danger' :
+                tipo === 'warning' ? 'alert-warning' : 'alert-info';
+
+        const html = `
+            <div class="mensagem-feedback alert ${classe} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 10000; min-width: 300px;">
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : tipo === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        $('body').append(html);
+
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            $('.mensagem-feedback').fadeOut(() => {
+                $('.mensagem-feedback').remove();
+            });
+        }, 5000);
+    }
+
+    // Funções auxiliares
+    function getStatusClass(status) {
+        // Normalizar o status para comparação (primeira letra maiúscula)
+        const statusNormalizado = formatarStatus(status);
+
+        // Log para debug
+        console.log('🔍 getStatusClass:', { original: status, normalizado: statusNormalizado });
+
+        switch (statusNormalizado) {
+            case 'Análise Comercial':
+                return 'status-analise-comercial';
+            case 'Análise Suprimentos':
+                return 'status-analise-suprimentos';
+            case 'Liberado para Venda':
+                return 'status-liberado';
+            case 'Cotação Perdida':
+                return 'status-perdida';
+            case 'Criação':
+                return 'status-criacao';
+            default:
+                console.log('⚠️ Status não reconhecido:', statusNormalizado);
+                return 'status-criacao';
+        }
+    }
+
+    function formatarMoeda(valor) {
+        if (valor === null || valor === undefined || isNaN(valor)) return '-';
+        const numero = parseFloat(valor);
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numero);
+    }
+
+    function formatarNumero(numero) {
+        if (numero === null || numero === undefined) return '-';
+        return parseFloat(numero).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function calcularTempoNoStatus(dataEntrada) {
+        if (!dataEntrada) return '-';
+        const entrada = new Date(dataEntrada);
+        const agora = new Date();
+        const diff = Math.floor((agora - entrada) / (1000 * 60 * 60 * 24));
+        return diff >= 0 ? diff + ' dias' : '0 dias';
+    }
+
+    // Funções de exclusão
+    function excluirCotacao(id) {
+        if (confirm('Tem certeza que deseja excluir esta cotação?')) {
+            $.ajax({
+                url: '/api/cotacao/' + id,
+                method: 'DELETE',
+                success: function (response) {
+                    console.log('Cotação excluída com sucesso:', response);
+                    const cardAtivo = $('.overview-card.active').data('type');
+                    carregarDadosPorTipo(cardAtivo);
+                    carregarContadores();
+                    // Mostrar mensagem de sucesso
+                    mostrarMensagem('Cotação excluída com sucesso!', 'success');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Erro ao excluir cotação:', { xhr, status, error });
+                    let mensagemErro = 'Erro ao excluir cotação.';
+
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        mensagemErro += ' ' + xhr.responseJSON.error;
+                    } else if (xhr.status === 404) {
+                        mensagemErro = 'Cotação não encontrada.';
+                    } else if (xhr.status === 403) {
+                        mensagemErro = 'Você não tem permissão para excluir esta cotação.';
+                    }
+
+                    mostrarMensagem(mensagemErro, 'error');
+                }
+            });
+        }
+    }
+
+    function excluirPesquisa(id) {
+        if (confirm('Tem certeza que deseja excluir esta pesquisa?')) {
+            $.ajax({
+                url: '/api/pesquisas/' + id, // Corrigido: usar 'pesquisas' no plural
+                method: 'DELETE',
+                success: function (response) {
+                    console.log('Pesquisa excluída com sucesso:', response);
+                    const cardAtivo = $('.overview-card.active').data('type');
+                    carregarDadosPorTipo(cardAtivo);
+                    carregarContadores();
+                    // Mostrar mensagem de sucesso
+                    mostrarMensagem('Pesquisa excluída com sucesso!', 'success');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Erro ao excluir pesquisa:', { xhr, status, error });
+                    let mensagemErro = 'Erro ao excluir pesquisa.';
+
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        mensagemErro += ' ' + xhr.responseJSON.error;
+                    } else if (xhr.status === 404) {
+                        mensagemErro = 'Pesquisa não encontrada.';
+                    } else if (xhr.status === 403) {
+                        mensagemErro = 'Você não tem permissão para excluir esta pesquisa.';
+                    }
+
+                    mostrarMensagem(mensagemErro, 'error');
+                }
+            });
+        }
+    }
+
+    // Event listeners para botões de ação
+    $(document).on('click', '.btn-exportar', function () {
+        const id = $(this).data('id');
+        exportarCotacao(id);
+    });
+
+    $(document).on('click', '.btn-exportar-pesquisa', function () {
+        const id = $(this).data('id');
+        exportarPesquisa(id);
+    });
+
+    function exportarCotacao(id) {
+        $.ajax({
+            url: '/api/cotacao/' + id + '/exportar',
+            method: 'GET',
+            success: function (response) {
+                if (response.success) {
+                    const filename = response.filepath.split('\\').pop();
+                    const downloadUrl = '/download/' + filename;
+
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    alert('Exportação concluída com sucesso!');
+                } else {
+                    alert('Erro ao exportar: ' + (response.error || 'Erro desconhecido'));
+                }
+            },
+            error: function (error) {
+                console.error('Erro ao exportar cotação:', error);
+                alert('Erro ao exportar cotação. Por favor, tente novamente.');
+            }
+        });
+    }
+
+    function exportarPesquisa(id) {
+        $.ajax({
+            url: '/api/pesquisa/' + id + '/exportar',
+            method: 'GET',
+            success: function (response) {
+                if (response.success) {
+                    const filename = response.filepath.split('\\').pop();
+                    const downloadUrl = '/download/' + filename;
+
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    alert('Exportação concluída com sucesso!');
+                } else {
+                    alert('Erro ao exportar: ' + (response.error || 'Erro desconhecido'));
+                }
+            },
+            error: function (error) {
+                console.error('Erro ao exportar pesquisa:', error);
+                alert('Erro ao exportar pesquisa. Por favor, tente novamente.');
+            }
+        });
+    }
+
+    // Função auxiliar para converter tipo para ID (camelCase)
+    function tipoToId(tipo) {
+        // Converte 'pesquisas-finalizadas' para 'PesquisasFinalizadas'
+        return tipo.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+    }
+
+    // Função para alternar seleção de todos os itens
+    function toggleSelectAll(tipo) {
+        const selectAllCheckbox = document.getElementById('selectAll' + tipoToId(tipo));
+        const rowCheckboxes = document.querySelectorAll(`#content-${tipo} .row-checkbox`);
+
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+
+        updateExportButton(tipo);
+    }
+
+    // Função para atualizar o estado do botão Exportar Todos
+    function updateExportButton(tipo) {
+        const rowCheckboxes = document.querySelectorAll(`#content-${tipo} .row-checkbox`);
+        const exportButton = document.getElementById('exportAll' + tipoToId(tipo));
+        const selectAllCheckbox = document.getElementById('selectAll' + tipoToId(tipo));
+
+        const checkedBoxes = document.querySelectorAll(`#content-${tipo} .row-checkbox:checked`);
+
+        // Atualizar estado do botão
+        if (exportButton) exportButton.disabled = checkedBoxes.length === 0;
+
+        // Atualizar estado do checkbox "Selecionar Todos"
+        if (selectAllCheckbox) {
+            if (checkedBoxes.length === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (checkedBoxes.length === rowCheckboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+    }
+
+    // Função para exportar todos os itens selecionados
+    function exportarTodos(tipo) {
+        const checkedBoxes = document.querySelectorAll(`#content-${tipo} .row-checkbox:checked`);
+
+        if (checkedBoxes.length === 0) {
+            alert('Selecione pelo menos um item para exportar.');
+            return;
+        }
+
+        const ids = Array.from(checkedBoxes).map(checkbox => parseInt(checkbox.dataset.id));
+        const tipoItem = checkedBoxes[0].dataset.tipo;
+
+        if (tipoItem === 'cotacao') {
+            exportarMultiplasCotacoes(ids);
+        } else {
+            exportarMultiplasPesquisas(ids);
+        }
+    }
+
+    // Função para exportar múltiplas cotações
+    function exportarMultiplasCotacoes(ids) {
+        $.ajax({
+            url: '/api/cotacoes/exportar',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ ids: ids }),
+            success: function (response) {
+                if (response.success) {
+                    const filename = response.filepath.split('\\').pop();
+                    const downloadUrl = '/download/' + filename;
+
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    alert(`Exportação de ${ids.length} cotações concluída com sucesso!`);
+                } else {
+                    alert('Erro ao exportar: ' + (response.error || 'Erro desconhecido'));
+                }
+            },
+            error: function (error) {
+                console.error('Erro ao exportar cotações:', error);
+                alert('Erro ao exportar cotações. Por favor, tente novamente.');
+            }
+        });
+    }
+
+    // Função para exportar múltiplas pesquisas
+    function exportarMultiplasPesquisas(ids) {
+        $.ajax({
+            url: '/api/pesquisas/exportar',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ ids: ids }),
+            success: function (response) {
+                if (response.success) {
+                    const filename = response.filepath.split('\\').pop();
+                    const downloadUrl = '/download/' + filename;
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    alert(`Exportação de ${ids.length} pesquisas concluída com sucesso!`);
+                } else {
+                    alert('Erro ao exportar: ' + (response.error || 'Erro desconhecido'));
+                }
+            },
+            error: function (error) {
+                console.error('Erro ao exportar pesquisas:', error);
+                alert('Erro ao exportar pesquisas. Por favor, tente novamente.');
+            }
+        });
+    }
+</script>
+</div>
+{% endblock %}
