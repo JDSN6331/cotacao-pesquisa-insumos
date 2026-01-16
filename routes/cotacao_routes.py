@@ -7,6 +7,7 @@ import pytz
 from werkzeug.utils import secure_filename
 import json
 import traceback
+import threading
 from services.email_service import enviar_email, obter_email_por_status
 from urllib.parse import unquote
 
@@ -230,18 +231,26 @@ def criar_cotacao():
         
         db.session.commit()
         
-        # Enviar e-mail para o departamento correto
-        try:
-            destinatario = obter_email_por_status(cotacao.status)
-            # Se for lista de e-mails, usar diretamente; senão, criar lista
-            destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
-            enviar_email(
-                destinatarios=destinatarios,
-                assunto='Nova Cotação Criada',
-                corpo_html=f'<p>Uma nova cotação foi criada para o cooperado {cotacao.nome_cooperado} (ID {cotacao.id}). Status: {cotacao.status}.</p>'
-            )
-        except Exception as e:
-            print('Erro ao enviar e-mail automático:', e)
+        # Enviar e-mail para o departamento correto (em background para não bloquear)
+        # Capturar valores antes de iniciar a thread para evitar erro de contexto
+        email_status = cotacao.status
+        email_nome_cooperado = cotacao.nome_cooperado
+        email_cotacao_id = cotacao.id
+        
+        def enviar_email_background(status, nome_cooperado, cid):
+            try:
+                destinatario = obter_email_por_status(status)
+                destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
+                enviar_email(
+                    destinatarios=destinatarios,
+                    assunto='Nova Cotação Criada',
+                    corpo_html=f'<p>Uma nova cotação foi criada para o cooperado {nome_cooperado} (ID {cid}). Status: {status}.</p>'
+                )
+            except Exception as e:
+                print('Erro ao enviar e-mail automático:', e)
+        
+        # Executar envio de e-mail em thread separada
+        threading.Thread(target=enviar_email_background, args=(email_status, email_nome_cooperado, email_cotacao_id), daemon=True).start()
         
         return jsonify({'success': True, 'message': 'Cotação criada com sucesso!'})
     except Exception as e:
@@ -358,18 +367,26 @@ def atualizar_cotacao(id):
         cotacao.data_ultima_modificacao = datetime.now(TZ_SP)
         db.session.commit()
         
-        # Enviar e-mail para o departamento correto
-        try:
-            destinatario = obter_email_por_status(cotacao.status)
-            # Se for lista de e-mails, usar diretamente; senão, criar lista
-            destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
-            enviar_email(
-                destinatarios=destinatarios,
-                assunto='Cotação Atualizada',
-                corpo_html=f'<p>A cotação de ID {cotacao.id} do cooperado {cotacao.nome_cooperado} foi atualizada. Status: {cotacao.status}.</p>'
-            )
-        except Exception as e:
-            print('Erro ao enviar e-mail automático:', e)
+        # Enviar e-mail para o departamento correto (em background para não bloquear)
+        # Capturar valores antes de iniciar a thread para evitar erro de contexto
+        email_status = cotacao.status
+        email_nome_cooperado = cotacao.nome_cooperado
+        email_cotacao_id = cotacao.id
+        
+        def enviar_email_background(status, nome_cooperado, cid):
+            try:
+                destinatario = obter_email_por_status(status)
+                destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
+                enviar_email(
+                    destinatarios=destinatarios,
+                    assunto='Cotação Atualizada',
+                    corpo_html=f'<p>A cotação de ID {cid} do cooperado {nome_cooperado} foi atualizada. Status: {status}.</p>'
+                )
+            except Exception as e:
+                print('Erro ao enviar e-mail automático:', e)
+        
+        # Executar envio de e-mail em thread separada
+        threading.Thread(target=enviar_email_background, args=(email_status, email_nome_cooperado, email_cotacao_id), daemon=True).start()
         
         return jsonify({'success': True, 'message': 'Cotação atualizada com sucesso!'})
     except Exception as e:

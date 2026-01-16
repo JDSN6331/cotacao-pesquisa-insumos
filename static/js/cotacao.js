@@ -118,6 +118,23 @@ document.addEventListener('DOMContentLoaded', function () {
         controlarCamposPorFase();
     });
 
+    // DELEGADO GLOBAL: Limpar campos monetários com "R$ 0,00" ao focar
+    // Funciona para todos os campos .money-input, inclusive os criados dinamicamente
+    document.addEventListener('focusin', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('money-input')) {
+            const valorAtual = e.target.value.trim();
+            console.log('Campo money-input focado. Valor atual:', JSON.stringify(valorAtual));
+            // Verificar se é um valor zero - captura qualquer variação
+            const valorLimpo = valorAtual.replace(/[R$\s]/g, '').replace(',', '.');
+            const isZero = valorLimpo === '' || valorLimpo === '0' || valorLimpo === '0.00' || valorLimpo === '0.0' || parseFloat(valorLimpo) === 0;
+            if (isZero && valorAtual !== '') {
+                console.log('Limpando campo com valor zero. valorLimpo:', valorLimpo);
+                e.target.value = '';
+            }
+        }
+    });
+    console.log('Delegado focusin para money-input registrado com sucesso!');
+
     // Função para atualizar botões de navegação
     function updateNavigationButtons() {
         const prevButton = document.getElementById('prevButton');
@@ -186,13 +203,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="preco_unitario_${produtoIndex}" class="form-label">Preço Unitário (R$)</label>
-                            <input type="text" class="form-control money-input" id="preco_unitario_${produtoIndex}" name="produtos[${produtoIndex}][preco_unitario]" placeholder="R$ 0,00">
+                            <input type="text" class="form-control money-input" id="preco_unitario_${produtoIndex}" name="produtos[${produtoIndex}][preco_unitario]" value="R$ 0,00">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="valor_total_${produtoIndex}" class="form-label">Valor Total (R$)</label>
-                            <input type="text" class="form-control money-input" id="valor_total_${produtoIndex}" name="produtos[${produtoIndex}][valor_total]" readonly placeholder="R$ 0,00">
+                            <input type="text" class="form-control money-input" id="valor_total_${produtoIndex}" name="produtos[${produtoIndex}][valor_total]" readonly value="R$ 0,00">
                         </div>
                     </div>
                 </div>
@@ -206,13 +223,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="preco_custo_${produtoIndex}" class="form-label">Preço de Custo (R$)</label>
-                            <input type="text" class="form-control money-input" id="preco_custo_${produtoIndex}" name="produtos[${produtoIndex}][preco_custo]" placeholder="R$ 0,00">
+                            <input type="text" class="form-control money-input" id="preco_custo_${produtoIndex}" name="produtos[${produtoIndex}][preco_custo]" value="R$ 0,00">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="valor_frete_${produtoIndex}" class="form-label">Valor do Frete (R$)</label>
-                            <input type="text" class="form-control money-input" id="valor_frete_${produtoIndex}" name="produtos[${produtoIndex}][valor_frete]" placeholder="R$ 0,00">
+                            <input type="text" class="form-control money-input" id="valor_frete_${produtoIndex}" name="produtos[${produtoIndex}][valor_frete]" value="R$ 0,00">
                         </div>
                     </div>
                 </div>
@@ -226,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="valor_total_com_frete_${produtoIndex}" class="form-label">Valor Total com Frete (R$)</label>
-                            <input type="text" class="form-control money-input" id="valor_total_com_frete_${produtoIndex}" name="produtos[${produtoIndex}][valor_total_com_frete]" readonly placeholder="R$ 0,00">
+                            <input type="text" class="form-control money-input" id="valor_total_com_frete_${produtoIndex}" name="produtos[${produtoIndex}][valor_total_com_frete]" readonly value="R$ 0,00">
                         </div>
                     </div>
                 </div>
@@ -255,15 +272,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 return value;
             }
 
+            // Função auxiliar para formatar moeda sem mostrar "R$ 0,00"
+            function formatMoneyOrEmpty(value) {
+                if (value === undefined || value === null || value === '' || value === 0 || value === '0') {
+                    return '';  // Deixar vazio para o placeholder aparecer
+                }
+                return formatMoney(value);
+            }
+
             document.getElementById(`sku_produto_${produtoIndex}`).value = safeValue(produtoData.sku_produto);
             document.getElementById(`nome_produto_${produtoIndex}`).value = safeValue(produtoData.nome_produto);
             document.getElementById(`volume_${produtoIndex}`).value = safeValue(produtoData.volume);
             document.getElementById(`unidade_medida_${produtoIndex}`).value = safeValue(produtoData.unidade_medida);
-            document.getElementById(`preco_unitario_${produtoIndex}`).value = produtoData.preco_unitario !== undefined ? formatMoney(produtoData.preco_unitario) : '';
-            document.getElementById(`valor_total_${produtoIndex}`).value = produtoData.valor_total !== undefined ? formatMoney(produtoData.valor_total) : '';
+            document.getElementById(`preco_unitario_${produtoIndex}`).value = formatMoneyOrEmpty(produtoData.preco_unitario);
+            document.getElementById(`valor_total_${produtoIndex}`).value = formatMoneyOrEmpty(produtoData.valor_total);
             document.getElementById(`fornecedor_${produtoIndex}`).value = safeValue(produtoData.fornecedor);
-            document.getElementById(`preco_custo_${produtoIndex}`).value = produtoData.preco_custo !== undefined ? formatMoney(produtoData.preco_custo) : '';
-            document.getElementById(`valor_frete_${produtoIndex}`).value = produtoData.valor_frete !== undefined ? formatMoney(produtoData.valor_frete) : '';
+            document.getElementById(`preco_custo_${produtoIndex}`).value = formatMoneyOrEmpty(produtoData.preco_custo);
+            document.getElementById(`valor_frete_${produtoIndex}`).value = formatMoneyOrEmpty(produtoData.valor_frete);
 
             // DEBUG: Campo importante
             const prazoElement = document.getElementById(`prazo_entrega_fornecedor_${produtoIndex}`);
@@ -274,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error(`Elemento prazo_entrega_fornecedor_${produtoIndex} não encontrado!`);
             }
 
-            document.getElementById(`valor_total_com_frete_${produtoIndex}`).value = produtoData.valor_total_com_frete !== undefined ? formatMoney(produtoData.valor_total_com_frete) : '';
+            document.getElementById(`valor_total_com_frete_${produtoIndex}`).value = formatMoneyOrEmpty(produtoData.valor_total_com_frete);
         }
 
         // Adicionar event listeners para cálculos automáticos
@@ -553,6 +578,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Função para configurar campos monetários
     function setupMoneyInput(input) {
+        if (!input) {
+            console.warn('setupMoneyInput: input não encontrado');
+            return;
+        }
+
+        // Limpar campo ao focar se o valor for "R$ 0,00" (valor padrão)
+        input.addEventListener('focus', function (e) {
+            const valorAtual = e.target.value.trim();
+            // Limpar se for o valor padrão zero
+            if (valorAtual === 'R$ 0,00' || valorAtual === 'R$0,00' || valorAtual === 'R$ 0.00') {
+                e.target.value = '';
+            }
+        });
+
         // Permitir digitação livre (apenas números, vírgula, ponto)
         input.addEventListener('input', function (e) {
             // Não formata, só impede letras

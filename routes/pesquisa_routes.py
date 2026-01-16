@@ -7,6 +7,7 @@ import pytz
 from werkzeug.utils import secure_filename
 import json
 import traceback
+import threading
 from services.email_service import enviar_email, obter_email_por_status
 
 pesquisa_routes = Blueprint('pesquisa_routes', __name__)
@@ -177,18 +178,27 @@ def criar_pesquisa():
         
         db.session.commit()
         
-        # Enviar e-mail para o departamento correto
-        try:
-            destinatario = obter_email_por_status(pesquisa.status)
-            # Se for lista de e-mails, usar diretamente; senão, criar lista
-            destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
-            enviar_email(
-                destinatarios=destinatarios,
-                assunto='Nova Pesquisa Criada' if not pesquisa_id else 'Pesquisa Atualizada',
-                corpo_html=f'<p>Uma pesquisa foi {"criada" if not pesquisa_id else "atualizada"} para o cooperado {pesquisa.nome_cooperado} (ID {pesquisa.id}). Status: {pesquisa.status}.</p>'
-            )
-        except Exception as e:
-            print('Erro ao enviar e-mail automático:', e)
+        # Enviar e-mail para o departamento correto (em background para não bloquear)
+        # Capturar valores antes de iniciar a thread para evitar erro de contexto
+        email_status = pesquisa.status
+        email_nome_cooperado = pesquisa.nome_cooperado
+        email_pesquisa_id = pesquisa.id
+        email_is_new = not pesquisa_id
+        
+        def enviar_email_background(status, nome_cooperado, pid, is_new):
+            try:
+                destinatario = obter_email_por_status(status)
+                destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
+                enviar_email(
+                    destinatarios=destinatarios,
+                    assunto='Nova Pesquisa Criada' if is_new else 'Pesquisa Atualizada',
+                    corpo_html=f'<p>Uma pesquisa foi {"criada" if is_new else "atualizada"} para o cooperado {nome_cooperado} (ID {pid}). Status: {status}.</p>'
+                )
+            except Exception as e:
+                print('Erro ao enviar e-mail automático:', e)
+        
+        # Executar envio de e-mail em thread separada
+        threading.Thread(target=enviar_email_background, args=(email_status, email_nome_cooperado, email_pesquisa_id, email_is_new), daemon=True).start()
         
         return jsonify({'id': pesquisa.id})
     except Exception as e:
@@ -322,18 +332,26 @@ def atualizar_pesquisa(id):
         pesquisa.data_ultima_modificacao = datetime.now(TZ_SP)
         db.session.commit()
         
-        # Enviar e-mail para o departamento correto
-        try:
-            destinatario = obter_email_por_status(pesquisa.status)
-            # Se for lista de e-mails, usar diretamente; senão, criar lista
-            destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
-            enviar_email(
-                destinatarios=destinatarios,
-                assunto='Pesquisa Atualizada',
-                corpo_html=f'<p>A pesquisa de ID {pesquisa.id} do cooperado {pesquisa.nome_cooperado} foi atualizada. Status: {pesquisa.status}.</p>'
-            )
-        except Exception as e:
-            print('Erro ao enviar e-mail automático:', e)
+        # Enviar e-mail para o departamento correto (em background para não bloquear)
+        # Capturar valores antes de iniciar a thread para evitar erro de contexto
+        email_status = pesquisa.status
+        email_nome_cooperado = pesquisa.nome_cooperado
+        email_pesquisa_id = pesquisa.id
+        
+        def enviar_email_background(status, nome_cooperado, pid):
+            try:
+                destinatario = obter_email_por_status(status)
+                destinatarios = destinatario if isinstance(destinatario, list) else [destinatario]
+                enviar_email(
+                    destinatarios=destinatarios,
+                    assunto='Pesquisa Atualizada',
+                    corpo_html=f'<p>A pesquisa de ID {pid} do cooperado {nome_cooperado} foi atualizada. Status: {status}.</p>'
+                )
+            except Exception as e:
+                print('Erro ao enviar e-mail automático:', e)
+        
+        # Executar envio de e-mail em thread separada
+        threading.Thread(target=enviar_email_background, args=(email_status, email_nome_cooperado, email_pesquisa_id), daemon=True).start()
         
         return jsonify(pesquisa.to_dict())
     except Exception as e:

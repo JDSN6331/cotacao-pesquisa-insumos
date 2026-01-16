@@ -391,6 +391,19 @@
                                         }
                                     });
                                 }
+
+                                // CÓDIGO INLINE: Limpar campos monetários com R$ 0,00 ao focar
+                                document.addEventListener('focusin', function (e) {
+                                    if (e.target && e.target.classList && e.target.classList.contains('money-input')) {
+                                        const valorAtual = e.target.value.trim();
+                                        // Verificar se é um valor zero
+                                        const valorLimpo = valorAtual.replace(/[R$\s]/g, '').replace(',', '.');
+                                        const isZero = valorLimpo === '' || valorLimpo === '0' || valorLimpo === '0.00' || valorLimpo === '0.0' || parseFloat(valorLimpo) === 0;
+                                        if (isZero && valorAtual !== '') {
+                                            e.target.value = '';
+                                        }
+                                    }
+                                });
                             });
                         </script>
                     </div>
@@ -456,5 +469,5 @@
 
 
 
-<script src="{{ url_for('static', filename='js/cotacao.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cotacao.js') }}?v=5"></script>
 {% endblock %}

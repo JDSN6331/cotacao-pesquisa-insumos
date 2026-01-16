@@ -39,7 +39,7 @@ def enviar_email(destinatarios, assunto, corpo_html):
     msg['To'] = ', '.join(destinatarios) if isinstance(destinatarios, list) else destinatarios
 
     try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
             server.starttls()
             server.login(usuario, senha)
             server.sendmail(usuario, destinatarios if isinstance(destinatarios, list) else [destinatarios], msg.as_string())
@@ -91,7 +91,7 @@ def enviar_notificacao_mudanca_status(cotacao):
         senha = 'Tricolor*01'
 
         try:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5) as server:
                 server.login(usuario, senha)
                 server.sendmail(usuario, [destinatario], msg.as_string())
             print(f'E-mail de notificação enviado para: {destinatario}')

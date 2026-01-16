@@ -262,6 +262,9 @@
                     <label for="anexos" class="form-label">Anexar Arquivos (Máx. 5)</label>
                     <input type="file" class="form-control" id="anexo" name="anexos[]" multiple
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png">
+                    <div id="anexoLoading" class="text-muted small mt-1" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Processando arquivo selecionado...
+                    </div>
                     <div class="form-text">Formatos permitidos: PDF, Word, Excel e Imagens. Limite de 5 arquivos no
                         total.
                     </div>
@@ -588,13 +591,30 @@
             return isNaN(resultado) ? 0 : resultado;
         }
 
+        // Limpar campo monetário ao focar se o valor for "R$ 0,00" (valor padrão)
+        $('.money-input').on('focus', function () {
+            const valorAtual = $(this).val().trim();
+            // Limpar se o valor for o padrão "R$ 0,00" ou vazio
+            if (valorAtual === 'R$ 0,00' || valorAtual === 'R$0,00') {
+                $(this).val('');
+            }
+        });
+
         $('.money-input').on('blur', function () {
             const valor = parseMoeda($(this).val());
             $(this).val(formatarMoeda(valor));
         });
 
+        // Mostrar indicador de carregamento ao clicar para selecionar arquivo
+        $('#anexo').on('click', function () {
+            $('#anexoLoading').show();
+        });
+
         // Validação do campo de anexos
         $('#anexo').on('change', function () {
+            // Esconder indicador de carregamento quando arquivo for selecionado
+            $('#anexoLoading').hide();
+
             const files = this.files;
             const numArquivosSelecionados = files.length; // Capturar ANTES de limpar
             const errorDiv = $('#anexoError');
