@@ -6,14 +6,11 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'chave-secreta-padrao-dev-2024'
     
     # Database Configuration
-    # PostgreSQL: postgresql://user:password@host:port/database
-    # SQLite (fallback): sqlite:///cotacoes.db
+    # MySQL (PythonAnywhere): mysql://user:password@host/database
+    # SQLite (local dev): sqlite:///cotacoes.db
     DATABASE_URL = os.environ.get('DATABASE_URL')
     
     if DATABASE_URL:
-        # Fix for Heroku's postgres:// URL (SQLAlchemy requires postgresql://)
-        if DATABASE_URL.startswith('postgres://'):
-            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
         SQLALCHEMY_DATABASE_URI = DATABASE_URL
     else:
         # Fallback to SQLite for local development
@@ -21,10 +18,10 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Connection pool settings for PostgreSQL
+    # Connection pool settings
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,  # Test connections before using
-        'pool_recycle': 300,    # Recycle connections after 5 minutes
+        'pool_recycle': 280,    # Recycle before MySQL timeout (300s)
     }
     
     # Pasta para exportações
@@ -49,7 +46,7 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    # In production, DATABASE_URL should be set as environment variable
+    # In production (PythonAnywhere), DATABASE_URL should be set
 
 
 class TestingConfig(Config):
